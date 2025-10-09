@@ -1,0 +1,127 @@
+# (1) Feature list & data schema for ML classification of vesicle shapes
+version: 0.1
+dataset_layout:
+  root_dir:
+    - metadata/
+      - README.md
+      - schema.yaml              # (this file)
+    - profiles/                  # per-solution curve data (aligned, resampled)
+      - <solution_id>.npz        # keys: r, z, s, H, K  (all length N)
+    - features/
+      - features.parquet         # tabular features (one row per solution)
+      - splits.json              # train/val/test indices + CV folds
+    - figures/                   # generated plots
+    - params/                    # raw parameter sweeps (optional)
+      - <solution_id>.json
+    - labels/                    # optional human labels / notes
+      - notes.csv
+
+identifiers:
+  - solution_id: string   # unique, e.g., "x050_H1p2_H2m1_run03_branchB"
+  - run_id: string        # sweep/run provenance
+  - branch_id: string     # forward/backward/hysteresis label if available
+  - seed: int             # RNG seed for solver/initialization if applicable
+
+global_assumptions:
+  - All profiles axisymmetric, arc-length parameterized, resampled to N points (default N=512)
+  - Coordinates are nondimensional (R0=1). Energies already nondimensionalized.
+  - Profiles are Procrustes-aligned (translation/rotation removed), and scale-normalized by perimeter (or area) as specified.
+  - Orientation standardized so "north pole" is at s=0, "south pole" at s=1.
+
+per-profile .npz arrays:
+  - r: float[N]           # radial coordinate after alignment & normalization
+  - z: float[N]           # axial coordinate after alignment & normalization
+  - s: float[N]           # normalized arc length in [0,1]
+  - H: float[N]           # mean curvature samples along profile
+  - K: float[N]           # Gaussian curvature samples along profile
+  # Optional locals:
+  - psi: float[N]         # tangent angle
+  - mask: uint8[N]        # valid samples (1) if any trimming near poles
+
+tabular features (features.parquet):
+  # ---- A) Spectral descriptors (shape-only, rotation/translation/scale invariant) ----
+  - fd_k: int                       # how many low-frequency Fourier terms kept (recommend 20)
+  - fd_re_1..fd_re_K: float         # real parts |k|=1..K (after invariance normalization)
+  - fd_im_1..fd_im_K: float         # imaginary parts |k|=1..K
+  - fd_mag_1..fd_mag_K: float       # magnitudes (optional; keep either mag+phase or re+im)
+  - fd_phase_1..fd_phase_K: float   # phases (optional; phase-anchor to k=1)
+
+  # ---- B) Differential geometry summaries ----
+  - H_mean: float
+  - H_std: float
+  - H_skew: float
+  - H_kurt: float
+  - H_L1: float                     # ∫|H| ds (discrete sum over s)
+  - H_L2: float                     # (∫H^2 ds)^{1/2}
+  - H_pos_area: float               # fraction of s with H>0
+  - H_neg_area: float               # fraction of s with H<0
+  - K_mean: float
+  - K_std: float
+  - K_L1: float
+  - K_L2: float
+  - HK_corr: float                  # corr(H, K) along profile
+
+  # ---- C) Neck / interface landmarks ----
+  - rb: float                       # neck radius
+  - psib: float                     # neck tangent angle
+  - H_jump_proxy: float             # local |ΔH| across a small window around neck
+  - curvature_min: float            # min(H) along profile
+  - curvature_min_loc: float        # argmin(H) in s ∈ [0,1]
+  - curvature_max: float            # max(H)
+  - curvature_max_loc: float
+
+  # ---- D) Topological & shape counts ----
+  - num_lobes: int                  # from peaks in r(s) or Fourier spectrum
+  - has_invagination: int           # 0/1; inward budding heuristic (e.g., local z self-approach)
+  - tubulation_score: float         # high if long near-cylindrical segment present
+  - asymmetry_score: float          # e.g., ∫ |z(s)+z(1-s)| ds after alignment
+
+  # ---- E) Energetics & constraints (auxiliary; don’t dominate clustering) ----
+  - E_total: float
+  - E_bend: float
+  - E_gauss: float                  # include if modeled; else NaN
+  - E_line: float
+  - E_surface: float
+  - P_osm: float                    # solved pressure
+  - A_total: float
+  - V_total: float
+
+  # ---- F) Parameters (inputs / controls) ----
+  - x1: float                       # area fraction phase (1)
+  - H0_1: float
+  - H0_2: float
+  - kappa_ratio: float              # kappa(1)/kappa(2)
+  - kG_flag: int                    # 0/1 if Gaussian term included
+  - sigma: float                    # line tension (nondim)
+  - constraints_ok: int             # solver status flag
+
+  # ---- G) Provenance & labels ----
+  - solution_id: string
+  - run_id: string
+  - branch_id: string               # "forward", "backward", "alt", or ""
+  - timestamp: string               # ISO 8601
+  - human_label: string             # optional manual class (e.g., "prolate", "biconcave", "bud-in", "multi-lobe")
+  - notes: string
+
+normalization:
+  spectral:
+    - Build complex series c_j = r_j + i z_j, j=1..N
+    - Remove translation via mean subtraction
+    - Remove rotation by rotating so arg(DFT[k=1])=0
+    - Remove scale by dividing all coefficients by |DFT[k=1]| (or perimeter)
+  tabular:
+    - Z-score each numeric feature across the dataset and store means/stds in metadata/normalization.json
+
+recommended N:
+  - 512 for smooth shapes (OK down to 256 if memory constrained)
+
+splits.json:
+  - {
+      "train": [solution_id,...],
+      "val":   [...],
+      "test":  [...],
+      "cv_folds": {
+        "fold0": {"train":[...], "val":[...]},
+        ...
+      }
+    }

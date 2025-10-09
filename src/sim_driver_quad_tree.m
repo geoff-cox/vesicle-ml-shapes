@@ -208,13 +208,6 @@ function S = initResultsIO(S)
     end
 end
 
-function appendCatalogRow(S, row)
-    % row: struct with fields matching catalog table vars
-    L = load(S.paths.catalog,'T'); T = L.T;
-    T = [T; struct2table(row)];
-    save(S.paths.catalog,'T','-v7.3');
-end
-
 function logmsg(S, fmt, varargin)
     msg = sprintf(fmt, varargin{:});
     if S.log.fid > 0
@@ -258,7 +251,7 @@ function processQuadtree(S, QT, params, cache)
     % Debug overrides
     if isfield(S,'debug') && isfield(S.debug,'short') && S.debug.short
         params.maxDepth = 2;           % very shallow refinement
-        params.maxCells = 3;          % small number of cells
+        params.maxCells = 30;          % small number of cells
         S.solver.opts   = bvpset(S.solver.opts,'NMax', 500,'RelTol',5e-6);
     end
 
@@ -652,32 +645,6 @@ function rmin = local_min_radius_interior(sol)
     end
 end
 
-function key = saveSolutionSparse(S, H0, sol)
-    % Short, readable key: rounded params + a hash to avoid collisions
-    p = sprintf('%+.2f_%+.2f', H0(1), H0(2));
-
-    key = struct( ...
-        'H0', S.H0, ...
-        'A',  S.params.A, 'V',  S.params.V, ...
-        'KA', S.params.KA,'KB', S.params.KB,'KG', S.params.KG, ...
-        'aS', S.params.aS,'bS', S.params.bS, ...
-        'delta', attempts(a).delta, ...
-        'codever','qtree-2025-02-15' );  % bump when equations change
-    
-    h = simpleDataHash(key);   % or DataHash(key,'SHA-256')
-    outdir = fullfile(S.paths.root,'results'); if ~exist(outdir,'dir'), mkdir(outdir); end
-    outfile = fullfile(outdir, [h '.mat']);
-    save(outfile, 'S', 'sol', 'key', '-v7.3');  % include S.params snapshot for provenance
-
-
-    h = DataHash([H0(:); numel(sol.x)]);  % use your favorite small hash
-    key = sprintf('%s_%s', p, h(1:8));
-    f = fullfile(S.paths.sol_dir, [key '.mat']);
-    % keep it light: store only what you need
-    S_sol = struct('x', sol.x, 'y', sol.y, 'parameters', sol.parameters);
-    save(f, 'S_sol', '-v7.3');
-end
-
 function saveCache(S, cache)
     f = fullfile(S.paths.run, 'cache.mat');
     save(f,'cache','-v7.3');
@@ -741,7 +708,6 @@ function writeCatalogRow(S, hash, label, E, P, bcmax, demax, mesh)
     fprintf(fid, fmt, row{:});
     fclose(fid);
 end
-
 
 function hex = simpleDataHash(x, method)
     if nargin < 2, method = 'SHA-256'; end

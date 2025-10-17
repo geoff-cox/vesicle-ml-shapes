@@ -1,0 +1,16 @@
+% -------------------------------------------------------------------------
+% EXTRACTED HELPER for "makeSolveKey"
+%   - Source: sim_driver_quad_tree_full.m
+%   - Extracted: 2025-10-11 11:50:12
+%   - Sub-helpers (nested functions) are retained in this file.
+% -------------------------------------------------------------------------
+
+function key = makeSolveKey(S)
+    % Only include things that define the physics; omit delta/tols.
+    key = struct( ...
+        'H0', S.H0, ...
+        'A',  S.params.A, 'V',  S.params.V, ...
+        'KA', S.params.KA,'KB', S.params.KB,'KG', S.params.KG, ...
+        'aS', S.params.aS,'bS', S.params.bS, ...
+        'codever','qtree-2025-02-15');   % bump when DE/BC change
+end

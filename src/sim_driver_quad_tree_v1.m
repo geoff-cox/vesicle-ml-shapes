@@ -1,4 +1,4 @@
-function sim_driver_quad_tree(varargin)
+function sim_driver_quad_tree_v1(varargin)
 % SIM_DRIVER_QUAD_TREE  Unified, MAT-only driver (single "continue" mode).
 %
 % Uses utils/ for everything:

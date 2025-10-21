@@ -1,10 +1,3 @@
-% -------------------------------------------------------------------------
-% EXTRACTED HELPER for "labelFromSolution"
-%   - Source: sim_driver_quad_tree_full.m
-%   - Extracted: 2025-10-11 11:50:12
-%   - Sub-helpers (nested functions) are retained in this file.
-% -------------------------------------------------------------------------
-
 function [label, E_total, P_osm] = labelFromSolution(sol)
     E_total = sol.y(9,end) - sol.y(18,end) + 0.5*sol.y(4,end);
     P_osm   = sol.parameters(1);

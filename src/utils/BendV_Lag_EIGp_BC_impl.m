@@ -1,10 +1,3 @@
-% -------------------------------------------------------------------------
-% EXTRACTED HELPER for "BendV_Lag_EIGp_BC_impl"
-%   - Source: sim_driver_quad_tree_full.m
-%   - Extracted: 2025-10-11 11:50:12
-%   - Sub-helpers (nested functions) are retained in this file.
-% -------------------------------------------------------------------------
-
 function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
     % -------- Simulation Parameters --------
     kA = par.KA;

@@ -207,11 +207,3 @@ function task = next_task_from_quadtree(cache, T)
     end
 end
 
-% ---------------- your existing solver wrapper ----------------
-function [result, meta] = solveAtParams(params, warm)
-    %#ok<INUSD>
-    % Call your bvp6c pipeline here. Must return:
-    %   result: struct with fields {s, y, bcResidual, deResidual}
-    %   meta:   struct with quick scalars {energy, pressure, residualMax, meshN, shapeLabel}
-    error('solveAtParams not wired in this stub. Connect to your existing implementation.');
-end

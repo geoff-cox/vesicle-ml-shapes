@@ -1,14 +1,9 @@
-% -------------------------------------------------------------------------
-% EXTRACTED HELPER for "de_residual"
-%   - Source: sim_driver_quad_tree_full.m
-%   - Extracted: 2025-10-11 11:50:12
-%   - Sub-helpers (nested functions) are retained in this file.
-% -------------------------------------------------------------------------
-
 function [rMax, rComp, worstIdx] = de_residual(sol, odefun)
+    
     % Second-order central difference on nonuniform grid, ignoring pole buffers.
-
-    lam = sol.parameters(:);
+    if isfield(sol,'parameters') && ~isempty(sol.parameters)
+        lam = sol.parameters(:);
+    end
     s   = sol.x;             % s in [0, pi]
     Y   = sol.y;
     n   = numel(s);

@@ -1,11 +1,13 @@
-% -------------------------------------------------------------------------
-% EXTRACTED HELPER for "saveCache"
-%   - Source: sim_driver_quad_tree_full.m
-%   - Extracted: 2025-10-11 11:50:12
-%   - Sub-helpers (nested functions) are retained in this file.
-% -------------------------------------------------------------------------
+function saveCache(simDir, cache)
+% SAVECACHE  Atomic save of the unified cache at SimResults/cache.mat.
 
-function saveCache(S, cache)
-    f = fullfile(S.paths.run, 'cache.mat');
-    save(f,'cache','-v7.3');
+    if isstruct(simDir) && isfield(simDir,'paths') && isfield(simDir.paths,'root')
+        % Backward-compat: old "S" struct
+        simDir = fullfile(simDir.paths.root, 'SimResults');
+    end
+
+    f   = fullfile(simDir, 'cache.mat');
+    tmp = [f '.tmp'];
+    save(tmp, 'cache', '-v7');
+    movefile(tmp, f, 'f');
 end

@@ -1,12 +1,9 @@
-% -------------------------------------------------------------------------
-% EXTRACTED HELPER for "bc_diagnostics"
-%   - Source: sim_driver_quad_tree_full.m
-%   - Extracted: 2025-10-11 11:50:12
-%   - Sub-helpers (nested functions) are retained in this file.
-% -------------------------------------------------------------------------
-
 function [BCmax, report] = bc_diagnostics(sol, bcfun)
-    Ya = sol.y(:,1); Yb = sol.y(:,end); lam = sol.parameters(:);
+
+    if isfield(sol,'parameters') && ~isempty(sol.parameters)
+        lam = sol.parameters(:);
+    end
+    Ya = sol.y(:,1); Yb = sol.y(:,end);
     res = bcfun(Ya, Yb, lam);
     [BCmax, iMax] = max(abs(res));
     report.idx = iMax;

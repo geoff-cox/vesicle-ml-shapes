@@ -9,10 +9,12 @@ cleanup(warnState);
 function S = sim_config()
 
     % ---- simulation settings ----
-    SP.MaxIters = 10;%1e9;
+    SP.MaxIters = 15;%1e9;
     SP.ModelVersion = "BVP-v3.1";
     SP.LogToFile = true;
     SP.Verbose = true;
+    SP.saveHomotopy = true;
+    SP.CoarsenOnStall = true;
 
     % ---- thresholds (gates) ----
     TH.BCmax     = 1e-6;
@@ -20,11 +22,13 @@ function S = sim_config()
     TH.rMin      = 1e-3;
 
     % ---- solver knobs (not part of physics hash) ----
-    TH.delta = 0.02;
+    TH.delta = 0.01;
     TH.opts  = bvpset( ...
         'RelTol',1e-6, ...
         'AbsTol',1e-8, ...
         'NMax',1500);
+    TH.delta_list = [0.01, 0.015, 0.02, 0.008, 0.005];
+    TH.minH0Step = 0.01;
 
     % ---- physical parameters (global for this run) ----
     MP.A  = 0.50;

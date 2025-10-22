@@ -1,4 +1,4 @@
-function [result, meta] = solveAtParams_v2(params, sim, warm)
+function [result, meta] = solveAtParams_v1(params, sim, warm)
 % SOLVEATPARAMS  Solve the vesicle BVP at given H0 using multi-rung continuation.
 % Supports verbose logging via sim.SP.Verbose (true/false)
 % and optional homotopy recording via sim.SP.SaveHomotopy (true/false).
@@ -50,7 +50,7 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
     % Reseed if we cross an axis between Hfrom and Htgt
     crossesZero = ( (H0_from(1) <= 0 && Htgt(1) >= 0) || (H0_from(1) >= 0 && Htgt(1) <= 0) ) ...
                || ( (H0_from(2) <= 0 && Htgt(2) >= 0) || (H0_from(2) >= 0 && Htgt(2) <= 0) );
-
+    
     if crossesZero
         say('    ↺ re-seed at [0,0] (crossed axis), trying again…');
         seedParams = struct('A',MP.A,'V',MP.V,'KG',MP.KG,'KA',MP.KA,'KB',MP.KB);
@@ -70,19 +70,26 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
 
     homolog   = [];
     accepted  = false;
-    sol       = []; 
+    sol       = [];
     usedPar   = basePar;
-
+    
     % allow one axis-path rescue per solve (avoids loops)
     axisFallbackTried = false;
 
     % ---------- main attempt loop ----------
-    for rung = 1:numel(stepCaps)
-        stepMax = stepCaps(rung);
+    rung = 0;
+    for s = 1:numel(stepCaps)
+        stepMax = stepCaps(s);
+        rung = rung + 1;
         say('\n-- Rung %d/%d: stepMax = %.3g --', rung, numel(stepCaps), stepMax);
+
         if isfinite(stepMax)
-            say('  continuation path: up to step %.3g', stepMax);
+            L = norm(Htgt - H0_from);
+            nSteps = max(1, ceil(L/stepMax));
+            Hpath = H0_from + (1:nSteps).'/nSteps .* (Htgt - H0_from);
+            say('  continuation path: %d steps (total ∆H0 = %.3g)', nSteps, L);
         else
+            Hpath = Htgt;  % direct attempt
             say('  direct attempt at target H0');
         end
 
@@ -96,10 +103,13 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
                 % Build a segment Hprev -> Htarget with cap stepMax; bisect on failure.
                 Hprev   = H0_from;
                 Htarget = Htgt;
-                maxSeg  = isfinite(stepMax) * stepMax + ~isfinite(stepMax) * norm(Htarget-Hprev);
-                minSeg  = (isfield(TH,'minH0Step') && TH.minH0Step>0) * TH.minH0Step ...
-                          + ~(isfield(TH,'minH0Step') && TH.minH0Step>0) * 0.01;
-
+                if isfinite(stepMax)
+                    maxSeg = stepMax;
+                else
+                    maxSeg = norm(Htarget - Hprev); % direct attempt if Inf
+                end
+                minSeg = 0.01;  % configurable: sim.TH.minH0Step
+                
                 while true
                     v = Htarget - Hprev;
                     L = norm(v);
@@ -108,14 +118,14 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
                     else
                         next = Hprev + v * (maxSeg / L);
                     end
-
+                
                     usedPar = basePar; 
                     usedPar.H0    = next; 
                     usedPar.delta = deltaNow;
 
                     odefun = @(s_,y_,lam_) BendV_Lag_EIGp_DE_impl(s_,y_,lam_,usedPar);
                     bcfun  = @(ya,yb,lam_) BendV_Lag_EIGp_BC_impl(ya,yb,lam_,usedPar);
-
+                
                     try
                         curSol = bvp6c(odefun, bcfun, curSol, optsNow);
                         % success: advance
@@ -124,7 +134,7 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
                             [BCi,~]   = bc_diagnostics(curSol, bcfun);
                             [DEi,~,~] = de_residual(curSol, odefun);
                             homolog(end+1) = struct( ...
-                                'H0'    , next, ...
+                                'H0'    , H0, ...
                                 'delta' , usedPar.delta, ...
                                 'mesh'  , numel(curSol.x), ...
                                 'BCmax' , BCi, ...
@@ -133,49 +143,26 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
 
                         if all(next == Htarget)
                             break; % reached this rung's target
-                        else
-                            Hprev = next;
                         end
-
-                    catch ME
-                        % 1) one-time axis-path fallback (cheap, often escapes corners)
-                        if ~axisFallbackTried
-                            axisFallbackTried = true;
-                            [okAlt, altInit] = try_axis_paths(curSol, Hfrom, Htgt, sim, maxSeg);
-                            if okAlt
-                                say('    ↪ axis-path fallback produced an accepted step; retrying ladder from that init…');
-                                curSol = altInit;
-                                % After successful axis step, continue while-loop (recompute next with same caps)
-                                continue;
-                            end
-                        end
-
-                        % 2) coarsen-then-retry once at the same 'next'
-                        try
-                            curSol_coarse = coarsen_mesh(curSol, 0.5);
-                            curSol = bvp6c(odefun, bcfun, curSol_coarse, optsNow);
-                            say('    ⤷ coarsen-mesh retry succeeded');
-                            if all(next == Htarget), break; else, Hprev = next; continue; end
-                        catch
-                            % 3) last: halve segment length (unless at floor)
-                            prevMax = maxSeg;
-                            maxSeg  = max(maxSeg/2, minSeg);
-                            say('    ✗ step failed: %s | halving step %.4g → %.4g (δ=%.4g, RT=%.1e)', ...
-                                ME.message, prevMax, maxSeg, deltaNow, bvpget(optsNow,'RelTol'));
-                            if maxSeg <= minSeg + eps
-                                curSol = [];    % give up on this δ/opts combo
-                                break
-                            end
+                        Hprev = next;
+                    catch
+                        temp = maxSeg;
+                        % failure: halve the segment length, retry unless we're below minSeg
+                        maxSeg = max(maxSeg/2, minSeg);
+                        say('    ✗ step failed: singular Jacobian | halving step %.4g → %.4g (δ=%.4g, RT=%.1e)', temp, maxSeg, deltaNow, bvpget(optsNow,'RelTol'));
+                        if maxSeg <= minSeg + eps
+                            curSol = [];    % give up on this δ/opts combo
+                            break
                         end
                     end
                 end
 
                 % verify final target
                 if ~isempty(curSol)
-                    % bcfunT  = @(ya,yb,lam_) BendV_Lag_EIGp_BC_impl(ya,yb,lam_,usedPar);
-                    % odefunT = @(s_,y_,lam_) BendV_Lag_EIGp_DE_impl(s_,y_,lam_,usedPar);
-                    [BCmax,~]   = bc_diagnostics(curSol, bcfun);
-                    [DEmax,~,~] = de_residual(curSol, odefun);
+                    bcfunT  = @(ya,yb,lam_) BendV_Lag_EIGp_BC_impl(ya,yb,lam_,usedPar);
+                    odefunT = @(s_,y_,lam_) BendV_Lag_EIGp_DE_impl(s_,y_,lam_,usedPar);
+                    [BCmax,~]   = bc_diagnostics(curSol, bcfunT);
+                    [DEmax,~,~] = de_residual(curSol, odefunT);
                     rmin        = local_min_radius_interior(curSol);
                     say('      Final gates: BC=%.2e | DE=%.2e | rmin=%.2e', BCmax,DEmax,rmin);
 

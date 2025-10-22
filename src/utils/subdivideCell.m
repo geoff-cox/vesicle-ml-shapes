@@ -1,9 +1,9 @@
 function [C1,C2,C3,C4] = subdivideCell(C)
 % Split into 4 children (SW, SE, NE, NW), inherit depth+1.
     a1 = C.corners(1,1);
-    a2 = C.corners(1,1);
-    b1 = C.corners(1,1);
-    b2 = C.corners(1,1);
+    a2 = C.corners(2,1);
+    b1 = C.corners(2,2);
+    b2 = C.corners(3,2);
     am = 0.5*(a1 + a2);
     bm = 0.5*(b1 + b2);
     d1 = C.depth + 1;

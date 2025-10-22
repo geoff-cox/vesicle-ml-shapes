@@ -1,4 +1,4 @@
-function [task, cache] = processQuadtree(cache, T)
+function [task, cache] = processQuadtree(cache, T, MP)
 % PROCESSQUADTREE  Scheduler for parameter points using a quadtree.
 % 
 % Contract (new):
@@ -35,14 +35,14 @@ function [task, cache] = processQuadtree(cache, T)
 %   C.isUniform      : logical
 %   C.mixedEdges     : kx2 indices of edges with label transitions
 
-function [task, cache] = processQuadtree(cache, T, MP)
     if nargin < 3, MP = struct(); end
-    task = []; cache = ensure_defaults(cache);
+    task = [];
+    cache = ensure_defaults(cache);
     if ~isfield(cache,'QT') || isempty(cache.QT) || isempty(cache.QT.queue)
         if ~isfield(cache,'config') || ~isfield(cache.config,'bounds')
             cache.config.bounds = [-1 1; -1 1];
         end
-        cache.QT.queue = {make_root_cell(cache.config.bounds)}; cache.QT.cells = [];
+        cache.QT.queue = {makeCell(cache.config.bounds)}; cache.QT.cells = [];
     end
 
     tol = 0;

@@ -1,17 +1,18 @@
 %% Script Driver
 %% run_initial_sweep.m
 
-bootstrap();
+warnState = bootstrap();
 sim = sim_config;
 sim_explore_H0_quad_tree(sim);
-cleanup();
+cleanup(warnState);
 
 function S = sim_config()
 
     % ---- simulation settings ----
-    SP.MaxIters = 1e9;
+    SP.MaxIters = 10;%1e9;
     SP.ModelVersion = "BVP-v3.1";
     SP.LogToFile = true;
+    SP.Verbose = true;
 
     % ---- thresholds (gates) ----
     TH.BCmax     = 1e-6;
@@ -23,7 +24,7 @@ function S = sim_config()
     TH.opts  = bvpset( ...
         'RelTol',1e-6, ...
         'AbsTol',1e-8, ...
-        'NMax',5000);
+        'NMax',1500);
 
     % ---- physical parameters (global for this run) ----
     MP.A  = 0.50;
@@ -47,7 +48,7 @@ end
 % Run this once per MATLAB session before launching the driver.
 % -------------------------------------------------------------
 
-function bootstrap
+function warnState = bootstrap
     restoredefaultpath; rehash toolboxcache;
     addpath(genpath(fullfile(pwd,'src')));
     addpath(fullfile(pwd,'bvp6c-solver'));
@@ -59,6 +60,8 @@ function bootstrap
 
     disp('MATLAB environment initialized for Vesicle Simulation Project.');
     ver
+
+    warnState = warning('off','MATLAB:bvp6c:RelTolNotMet');
 end
 
 function import_initial_shapes_into_catalog(ishapesDir, simDir)
@@ -86,7 +89,10 @@ end
 % removes added paths
 % -------------------------------------------------------------
 
-function cleanup
+function cleanup(warnState)
+    
+    warning(warnState);
+
     % Remove your source folders
     rmpath(genpath(fullfile(pwd,'src')));
     rmpath(fullfile(pwd,'bvp6c-solver'));

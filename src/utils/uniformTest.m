@@ -1,33 +1,38 @@
-% -------------------------------------------------------------------------
-% EXTRACTED HELPER for "uniformTest"
-%   - Source: sim_driver_quad_tree_full.m
-%   - Extracted: 2025-10-11 11:50:11
-%   - Sub-helpers (nested functions) are retained in this file.
-% -------------------------------------------------------------------------
-
 function [uniform, mixedEdges] = uniformTest(C, eTol, pTol, tau)
-    % Decide whether a cell is "uniform" (same morphology) or "mixed".
-    % Heuristics:
-    %  1) all corner labels equal --> uniform
-    %  2) else, if max energy/pressure difference small AND shape distances small --> uniform
-    %  3) track which edges are mixed to seed boundary tracing
+% Decide whether a cell is "uniform" (same morphology) or "mixed".
+% Heuristics:
+%   0) if any corner is unsolved → not uniform (forces subdivision)
+%   1) all corner labels equal → uniform
+%   2) else, if energy/pressure spreads small (and optional shape test) → uniform
+% Returns:
+%   uniform     : logical
+%   mixedEdges  : K×2 indices into the corners (SW,SE,NE,NW) that differ in label
+
+    % 0) require solved corners
+    if isfield(C,'cornerSolved') && any(~C.cornerSolved)
+        uniform = false; mixedEdges = zeros(0,2); return;
+    end
 
     labs = C.cornerLabel;
+    % 1) all equal?
     if all(labs == labs(1))
         uniform = true; mixedEdges = zeros(0,2); return;
     end
 
-    eSpread = max(C.cornerEnergy)   - min(C.cornerEnergy);
-    pSpread = max(C.cornerPressure) - min(C.cornerPressure);
+    % Guard against NaNs
+    E = C.cornerEnergy;   E(~isfinite(E)) = inf;
+    P = C.cornerPressure; P(~isfinite(P)) = inf;
 
-    % Optional: include shape descriptor distances if you store them in meta
-    % Here, we only use labels + E/P spreads
-    shapeSmall = true; % replace with real test if you export descriptors
+    eSpread = max(E) - min(E);
+    pSpread = max(P) - min(P);
 
-    uniform = (eSpread < eTol) && (pSpread < pTol) && shapeSmall;
+    % Optional shape criterion (placeholder)
+    shapeSmall = true; %#ok<NASGU>  % replace if you add descriptors and use 'tau'
 
-    % Which edges have differing labels?
-    edges = [1 2; 2 3; 3 4; 4 1]; % SW-SE, SE-NE, NE-NW, NW-SW
+    uniform = (eSpread <= eTol) && (pSpread <= pTol);  % keep strict but inclusive
+
+    % Edges in SW,SE,NE,NW order
+    edges = [1 2; 2 3; 3 4; 4 1];  % SW-SE, SE-NE, NE-NW, NW-SW
     mixedEdges = [];
     if ~uniform
         for k = 1:4

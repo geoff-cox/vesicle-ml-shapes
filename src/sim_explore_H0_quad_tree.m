@@ -83,7 +83,7 @@ function sim_explore_H0_quad_tree(sim)
         end
 
         % atomic write
-        tmp = [fmat '.tmp'];
+        tmp = fmat + ".tmp";
         save(tmp, 'result','meta','-v7.3');
         movefile(tmp, fmat, 'f');
 

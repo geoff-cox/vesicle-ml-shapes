@@ -127,7 +127,7 @@ Edit the configuration section in `script_driver_slim.m`:
 ### Extending the ML Pipeline
 
 Work in `notebooks/`:
-- Follow the schema defined in `feature-list-data-schema.yaml`
+- Follow the schema defined in `notebooks/feature-list-data-schema.yaml`
 - Extract features from `.mat` files in `SimResults/hashed_results/`
 - Use catalog.mat for metadata (parameters, convergence info)
 

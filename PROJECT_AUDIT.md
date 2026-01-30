@@ -428,7 +428,7 @@ vesicle_ml/
 | `script_driver_slim.m` | 104 | Main entry point, configuration |
 | `sim_explore_H0_quad_tree.m` | 263 | Parameter sweep driver |
 | `solveAtParams_v2.m` | 227 | BVP solver with continuation |
-| `processQuadtree.m` | ~150 | Adaptive scheduler |
+| `processQuadtree.m` | ~70 | Adaptive scheduler |
 | `BendV_Lag_EIGp_BC_impl.m` | ~90 | Boundary conditions |
 | `BendV_Lag_EIGp_DE_impl.m` | ~120 | Differential equations |
 | `pickWarmStart.m` | ~40 | Warm-start selection |

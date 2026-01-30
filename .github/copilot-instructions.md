@@ -122,7 +122,7 @@ function output = myNewFunction(input1, input2)
 Edit the configuration section in `script_driver_slim.m`:
 - Physical parameters: `sim.MP` structure (A, V, KA, KB, KG)
   - Note: H0_1 and H0_2 are passed separately as exploration parameters, not stored in sim.MP
-- Solver settings: `sim.TH` structure (RelTol, AbsTol, delta, BCmax)
+- Solver settings: `sim.TH` structure (e.g., `delta`, `BCmax`, `NMax`, etc.) and `sim.TH.opts` for BVP options (e.g., `RelTol`, `AbsTol`)
 
 ### Extending the ML Pipeline
 

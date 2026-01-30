@@ -14,7 +14,7 @@ The simulation framework solves for vesicle equilibrium shapes under bending ene
 - **`bvp6c-solver/`**: High-order (6th-order) BVP solver, adapted from MATLAB's standard solver
 - **`InitialShapes/`**: Seed shapes (`.mat` files) used as starting points for continuation
 - **`SimResults/`**: Simulation outputs including:
-  - `solutions/`: Individual solution `.mat` files (hash-named for uniqueness)
+  - `hashed_results/`: Individual solution `.mat` files (hash-named for uniqueness)
   - `catalog.mat`: Master index of all solved parameter points
   - `cache.mat`: Quad-tree state and work queue for parameter exploration
 - **`src/`**: Core simulation code
@@ -120,14 +120,15 @@ function output = myNewFunction(input1, input2)
 ### Modifying Solver Parameters
 
 Edit the configuration section in `script_driver_slim.m`:
-- Physical parameters: `sim.MP` structure (A, V, KA, KB, KG, H01, H02)
-- Solver settings: `sim.TH` structure (RelTol, AbsTol, Delta, BCmax)
+- Physical parameters: `sim.MP` structure (A, V, KA, KB, KG)
+  - Note: H0_1 and H0_2 are passed separately as exploration parameters, not stored in sim.MP
+- Solver settings: `sim.TH` structure (RelTol, AbsTol, delta, BCmax)
 
 ### Extending the ML Pipeline
 
 Work in `notebooks/`:
 - Follow the schema defined in `feature-list-data-schema.yaml`
-- Extract features from `.mat` files in `SimResults/solutions/`
+- Extract features from `.mat` files in `SimResults/hashed_results/`
 - Use catalog.mat for metadata (parameters, convergence info)
 
 ## Performance Considerations

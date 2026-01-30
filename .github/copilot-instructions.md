@@ -54,7 +54,7 @@ The simulation framework solves for vesicle equilibrium shapes under bending ene
 
 ### MATLAB Code
 
-- **Function Names**: Use camelCase (e.g., `pickWarmStart`, `coarsen_mesh`)
+- **Function Names**: Match the surrounding code’s naming style and be consistent within a file or module (e.g., `pickWarmStart`, `computePhaseScales`, `coarsen_mesh`)
 - **Variable Names**: Use descriptive names; common conventions:
   - `sim`: Structure containing simulation configuration (`.MP` for physical params, `.TH` for solver thresholds)
   - `sol`: Solution structure from BVP solver

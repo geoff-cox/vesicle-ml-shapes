@@ -58,10 +58,10 @@ vesicle-ml-shapes/
 │   ├── tools/             # Maintenance/migration scripts (5 .m files)
 │   └── sim_explore_H0_quad_tree.m  # Main driver
 ├── docs/                  # Research plan PDF and quad-tree README
-├── notebooks/             # ML pipeline design (Python)
+├── notebooks/             # ML pipeline design (Python - templates only)
+│   ├── README.md                      # Implementation status
 │   ├── feature-list-data-schema.yaml  # ML feature specifications
 │   └── pipeline-notebook.py           # Starter analysis template
-├── retired/               # Deprecated code versions
 ├── script_driver_slim.m   # Runnable simulation entry point
 ├── script_driver.mlx      # Live script version
 └── tool_driver.mlx        # Interactive tools
@@ -243,9 +243,8 @@ vesicle_ml/
 - No automated test suite (manual testing only)
 - Limited code comments in some utility functions
 - No continuous integration / automated validation
-- Python ML code is template-only, not production-ready
-- Some deprecated code in `retired/` could be removed for clarity
-- Minimal version control history visible (only 2 commits in clone)
+- Python ML code is template-only, not production-ready (see `notebooks/README.md` for status)
+- Minimal version control history visible (limited commits in clone)
 
 ---
 

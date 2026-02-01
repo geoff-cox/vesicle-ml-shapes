@@ -1,4 +1,5 @@
 function [ok, initSol, fromH0] = try_axis_paths(warmSol, Hfrom, Htgt, sim, stepMax)
+% TRY_AXIS_PATHS  Axis-aligned fallback when 2D continuation stalls.
 % Try two one-dimensional homotopies: (H0_1 then H0_2) and (H0_2 then H0_1).
 % Returns first that completes at least one accepted step (ok=true) along either axis.
 
@@ -49,26 +50,26 @@ function [accept, sol] = try_one_shot(solInit, H0, sim)
                   'aS',aS,'bS',bS,'delta',sim.TH.delta);
 
     deltas = sim.TH.delta_list;  % e.g., [0.01, 0.02, 0.005]
-    opts   = [sim.TH.opts, bvpset(sim.TH.opts,'RelTol',1e-5,'AbsTol',1e-7)];
+    opts   = {sim.TH.opts, bvpset(sim.TH.opts,'RelTol',1e-5,'AbsTol',1e-7)};
 
     for d = 1:numel(deltas)
       for o = 1:numel(opts)
-        Par = Par0; Par.delta = deltas(d);
-        odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
-        bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
-        try
-            sol1 = bvp6c(odefun, bcfun, solInit, opts(o));
-            [BCmax,~] = bc_diagnostics(sol1, bcfun);
-            [DEmax,~,~] = de_residual(sol1, odefun);
-            rmin = local_min_radius_interior(sol1);
-            if (BCmax <= TH.BCmax) && (DEmax <= TH.DEmaxHard) && (rmin >= TH.rMin)
-                accept = true; sol = sol1; return;
-            else
-                solInit = sol1; % warm next try
-            end
-        catch
-            % continue
-        end
+          Par = Par0; Par.delta = deltas(d);
+          odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
+          bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
+          try
+              sol1 = bvp6c(odefun, bcfun, solInit, opts{o});
+              [BCmax,~] = bc_diagnostics(sol1, bcfun);
+              [DEmax,~,~] = de_residual(sol1, odefun);
+              rmin = local_min_radius_interior(sol1);
+              if (BCmax <= TH.BCmax) && (DEmax <= TH.DEmaxHard) && (rmin >= TH.rMin)
+                  accept = true; sol = sol1; return;
+              else
+                  solInit = sol1; % warm next try
+              end
+          catch
+              % continue
+          end
       end
     end
 end

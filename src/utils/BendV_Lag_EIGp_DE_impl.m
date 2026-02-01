@@ -1,4 +1,8 @@
 function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
+    % BENDV_LAG_EIGP_DE_IMPL  ODE system for two-phase vesicle equilibrium.
+    % Evaluates d/ds of 18-component state vector (9 α-phase, 9 β-phase).
+    % Uses a Taylor-expanded RHS near poles (S < delta*pi), otherwise bulk RHS.
+
     % -------- Simulation Parameters --------
     kA = par.KA;
     kB = par.KB;
@@ -11,12 +15,13 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
     SA = aS*S;
     SB = bS*S + pi;
 
-    % α-phase variables
+    % α-phase variables: [Q,H,P,r,z,L,s,V,E]
     alpha_vars = num2cell(y(1:9));
 
-    % β-phase variables
+    % β-phase variables: [Q,H,P,r,z,L,s,V,E]
     beta_vars = num2cell(y(10:18));
 
+    % RHS_pole handles singular pole expansion; RHS is bulk form.
     RHS_pole = @(Q, H, P, r, z, L, s, V, B, S, k, H0, phase) [ ...
         H*L + 0.5*lam - k*H0*H^2 + 0.5*k*H*H0^2;
         0;

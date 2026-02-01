@@ -48,8 +48,8 @@ This project aims to systematically explore the equilibrium shape landscape of t
 ```
 vesicle-ml-shapes/
 ├── bvp6c-solver/          # High-order BVP solver (modified from MATLAB)
-├── InitialShapes/         # Seed shapes for continuation (4 .mat files)
-├── SimResults/            # Simulation outputs and catalog
+├── initial-shapes/         # Seed shapes for continuation (4 .mat files)
+├── sim-results/            # Simulation outputs and catalog
 │   ├── hashed_results/    # Individual solution .mat files (hash-named)
 │   ├── catalog.mat        # Master index of all solutions
 │   └── cache.mat          # Quad-tree state and work queue
@@ -128,7 +128,7 @@ vesicle-ml-shapes/
 
 **G. Utilities (30+ helper functions)**
 - `pickWarmStart.m`: Find best continuation starting point
-- `initialGuessFromFile.m`: Load seed shapes from InitialShapes/
+- `initialGuessFromFile.m`: Load seed shapes from initial-shapes/
 - `coarsen_mesh.m`: Adaptive mesh reduction for difficult solves
 - `simpleDataHash.m`: Generate SHA-256 hashes for result identification
 - `computePhaseScales.m`: Derive geometric scales from area fraction
@@ -256,7 +256,7 @@ vesicle_ml/
 
 1. **Run Extended Parameter Sweep**
    - Increase `MaxIters` in `script_driver_slim.m` from 15 to 1000-10000
-   - Monitor simulation progress via `SimResults/OPfile.txt` logs
+   - Monitor simulation progress via `sim-results/OPfile.txt` logs
    - Estimated time: days to weeks depending on parameter range and hardware
    - Target: 500-2000 distinct solutions across (H₀₁, H₀₂) space
 
@@ -280,7 +280,7 @@ vesicle_ml/
 
 4. **Implement MATLAB→Python Data Converter**
    - Create script `export_to_ml_format.m`:
-     - Read all `.mat` files from `SimResults/hashed_results/`
+     - Read all `.mat` files from `sim-results/hashed_results/`
      - Load catalog to get parameter metadata
      - For each solution:
        - Resample profile to N=512 points uniformly in arc-length
@@ -443,8 +443,8 @@ vesicle_ml/
 
 ### Data Assets
 
-- **InitialShapes/**: 4 seed shapes (A=0.50/0.60/0.75/0.90, V=0.72)
-- **SimResults/**: Catalog with 8 initial seed entries + any solved points
+- **initial-shapes/**: 4 seed shapes (A=0.50/0.60/0.75/0.90, V=0.72)
+- **sim-results/**: Catalog with 8 initial seed entries + any solved points
 - **docs/**: Research plan PDF outlines multi-phase vesicle theory and project motivation
 
 ---

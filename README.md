@@ -22,7 +22,7 @@ This will:
 1. Bootstrap the simulation environment
 2. Configure physical parameters and solver settings
 3. Explore the (H₀₁, H₀₂) parameter space using adaptive quad-tree refinement
-4. Save results to `SimResults/hashed_results/`
+4. Save results to `sim-results/hashed_results/`
 
 ### Key Entry Points
 
@@ -36,9 +36,9 @@ This will:
 vesicle-ml-shapes/
 ├── bvp6c-solver/          # High-order (6th-order) BVP solver
 │   └── bvp6c.m            # Modified MATLAB BVP solver
-├── InitialShapes/         # Seed shapes for continuation
+├── initial-shapes/         # Seed shapes for continuation
 │   └── SIM_Node_*.mat     # Bootstrap shapes at different area fractions
-├── SimResults/            # Simulation outputs
+├── sim-results/            # Simulation outputs
 │   ├── hashed_results/    # Individual solution .mat files (SHA-256 named)
 │   ├── catalog.mat        # Master index of all solutions
 │   └── cache.mat          # Quad-tree state and work queue

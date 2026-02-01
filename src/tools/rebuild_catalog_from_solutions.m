@@ -1,7 +1,7 @@
 % File: tools/rebuild_catalog_from_solutions.m
 % Purpose:
-%   Rebuild SimResults/catalog.csv and SimResults/catalog.mat by scanning
-%   SimResults/solutions/*.mat, using the filename stem as the hash.
+%   Rebuild sim-results/catalog.csv and sim-results/catalog.mat by scanning
+%   sim-results/solutions/*.mat, using the filename stem as the hash.
 %
 % How to run:
 %   >> cd(project_root)
@@ -9,7 +9,7 @@
 %   >> rebuild_catalog_from_solutions
 
 function rebuild_catalog_from_solutions()
-    simDir = fullfile(pwd,'SimResults');
+    simDir = fullfile(pwd,'sim-results');
     solDir = fullfile(simDir,'solutions');
     if ~exist(solDir,'dir')
         error('Missing folder: %s', solDir);

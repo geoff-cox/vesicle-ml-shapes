@@ -2,7 +2,7 @@ function warm = pickWarmStart(params, sim, simDir, T)
 % PICKWARMSTART  Choose a warm-start for (H0_1,H0_2) with fixed physics in sim.MP.
 % Priority:
 %   1) Nearest already-solved point (matching physics) from catalog -> hashed_results/<hash>.mat
-%   2) Seed file from InitialShapes/ with matching physics (A,V,KG,KA,KB)
+%   2) Seed file from initial-shapes/ with matching physics (A,V,KG,KA,KB)
 % Modern-only: expects hashed_results/<hash>.mat with 'result' struct.
 
     warm = struct();
@@ -41,7 +41,7 @@ function warm = pickWarmStart(params, sim, simDir, T)
         end
     end
 
-    % 2) seeds from InitialShapes (registered by bootstrap with meta.type="seed")
+    % 2) seeds from initial-shapes (registered by bootstrap with meta.type="seed")
     if ~isempty(T) && any(T.Properties.VariableNames=="entry")
         isSeed = cellfun(@(e) isstruct(e.meta) && isfield(e.meta,'type') ...
                                  && strcmpi(string(e.meta.type),'seed'), T.entry);
@@ -55,7 +55,7 @@ function warm = pickWarmStart(params, sim, simDir, T)
         if any(mask)
             ix = find(mask,1,'first');
             src = ""; if isfield(T.entry{ix}.meta,'source'), src = string(T.entry{ix}.meta.source); end
-            ishapesDir = fullfile(fileparts(simDir),'InitialShapes');
+            ishapesDir = fullfile(fileparts(simDir),'initial-shapes');
             f = src; if ~isempty(src) && exist(f,'file')~=2, f = fullfile(ishapesDir, src); end
             if exist(f,'file')==2
                 tmp = load(f);

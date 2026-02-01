@@ -5,7 +5,7 @@
 % 
 %     % ---------------- paths & logging ----------------
 %     projRoot = fileparts(fileparts(mfilename('fullpath')));
-%     simDir   = fullfile(projRoot,'SimResults');
+%     simDir   = fullfile(projRoot,'sim-results');
 %     solDir   = fullfile(simDir,'hashed_results');
 %     if ~exist(simDir,'dir'), mkdir(simDir); end
 %     if ~exist(solDir,'dir'), mkdir(solDir); end
@@ -171,7 +171,7 @@ function sim_explore_H0_quad_tree(sim)
 
     % -- paths & logging
     projRoot = fileparts(fileparts(mfilename('fullpath')));
-    simDir   = fullfile(projRoot,'SimResults');
+    simDir   = fullfile(projRoot,'sim-results');
     solDir   = fullfile(simDir,'hashed_results');
     if ~exist(simDir,'dir'), mkdir(simDir); end
     if ~exist(solDir,'dir'), mkdir(solDir); end %#ok<*NOPTS>

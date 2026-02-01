@@ -56,11 +56,11 @@ function warnState = bootstrap
     restoredefaultpath; rehash toolboxcache;
     addpath(genpath(fullfile(pwd,'src')));
     addpath(fullfile(pwd,'bvp6c-solver'));
-    addpath(fullfile(pwd,'InitialShapes'));
-    if ~exist('SimResults','dir'), mkdir('SimResults'); end
+    addpath(fullfile(pwd,'initial-shapes'));
+    if ~exist('sim-results','dir'), mkdir('sim-results'); end
 
     % Seed import
-    import_initial_shapes_into_catalog(fullfile(pwd,'InitialShapes'), fullfile(pwd,'SimResults'));
+    import_initial_shapes_into_catalog(fullfile(pwd,'initial-shapes'), fullfile(pwd,'sim-results'));
 
     disp('MATLAB environment initialized for Vesicle Simulation Project.');
     ver
@@ -100,5 +100,5 @@ function cleanup(warnState)
     % Remove your source folders
     rmpath(genpath(fullfile(pwd,'src')));
     rmpath(fullfile(pwd,'bvp6c-solver'));
-    rmpath(fullfile(pwd,'InitialShapes'));
+    rmpath(fullfile(pwd,'initial-shapes'));
 end

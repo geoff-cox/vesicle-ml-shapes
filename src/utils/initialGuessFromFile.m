@@ -1,17 +1,17 @@
 function initSol = initialGuessFromFile(params, H0)
-% INITIALGUESSFROMFILE  Load a seed solution from InitialShapes/.
+% INITIALGUESSFROMFILE  Load a seed solution from initial-shapes/.
 % Usage:
 %   initSol = initialGuessFromFile(params, [H0_1 H0_2])
 % Looks for:
 %   1) params.initialGuess (explicit filename, with or without path)
-%   2) the nearest SIM_Node_* file in InitialShapes/ (by |H0_1 - angle| if present)
+%   2) the nearest SIM_Node_* file in initial-shapes/ (by |H0_1 - angle| if present)
 %
 % Expects files saved with a struct like Version(1).Solution.
 
     % 0) project folders
     here  = fileparts(mfilename('fullpath'));
     root  = fileparts(fileparts(here));           % .../src/utils -> project root
-    ishapes = fullfile(root,'InitialShapes');
+    ishapes = fullfile(root,'initial-shapes');
 
     % 1) explicit filename provided
     if isfield(params,'initialGuess') && ~isempty(params.initialGuess)
@@ -25,7 +25,7 @@ function initSol = initialGuessFromFile(params, H0)
         return
     end
 
-    % 2) pick a reasonable default from InitialShapes/
+    % 2) pick a reasonable default from initial-shapes/
     d = dir(fullfile(ishapes, 'SIM_Node_*.mat'));
     assert(~isempty(d), [...
         'initialGuessFromFile: ' ...

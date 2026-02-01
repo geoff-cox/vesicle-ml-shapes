@@ -37,7 +37,7 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
     if isempty(initSol)
         seedParams = struct('A',MP.A,'V',MP.V,'KG',MP.KG,'KA',MP.KA,'KB',MP.KB);
         initSol = initialGuessFromFile(seedParams, Htgt);
-        say('Using seed initial shape (InitialShapes folder).');
+        say('Using seed initial shape (initial-shapes folder).');
     end
 
     if isfield(warm,'fromParams') && all(isfield(warm.fromParams,{'H0_1','H0_2'}))
@@ -54,7 +54,7 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
     if crossesZero
         say('    ↺ re-seed at [0,0] (crossed axis), trying again…');
         seedParams = struct('A',MP.A,'V',MP.V,'KG',MP.KG,'KA',MP.KA,'KB',MP.KB);
-        seedSol = initialGuessFromFile(seedParams, [0,0]);  % your InitialShapes
+        seedSol = initialGuessFromFile(seedParams, [0,0]);  % your initial-shapes
         if ~isempty(seedSol), initSol = seedSol; end
     end
 

@@ -1,11 +1,11 @@
 % File: tools/merge_legacy_catalogs.m
-% Merge all legacy SimResults/**/catalog.mat into SimResults/catalog.mat.
+% Merge all legacy sim-results/**/catalog.mat into sim-results/catalog.mat.
 
 function merge_legacy_catalogs()
     root  = pwd;
-    simDir = fullfile(root,'SimResults');
+    simDir = fullfile(root,'sim-results');
     solDir = fullfile(simDir,'solutions');
-    if ~exist(simDir,'dir'); error('Missing SimResults'); end
+    if ~exist(simDir,'dir'); error('Missing sim-results'); end
     if ~exist(solDir,'dir'); mkdir(solDir); end
 
     addpath(fullfile(root,'src','utils')); %#ok<ADD> for catalog_mat.m

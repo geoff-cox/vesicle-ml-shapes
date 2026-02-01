@@ -115,7 +115,7 @@ This bootstraps paths, initializes catalog from seed shapes in `initial-shapes/`
 3. **Seed shapes**: The 4 `.mat` files in `initial-shapes/` are imported to catalog on first run via `import_initial_shapes_into_catalog()` in `script_driver_slim.m`.
 
 ### Git Ignore
-Configured to exclude: `sim-results/solutions` and `sim-results/delete_these` (legacy paths), MATLAB autosave `.asv` files, OS cruft (`.DS_Store`).
+Repository-level `.gitignore` is currently configured to exclude only `sim-results/solutions` and `sim-results/delete_these` (legacy result paths).
 
 ## Key Architecture Facts
 

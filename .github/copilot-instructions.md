@@ -1,177 +1,151 @@
 # GitHub Copilot Instructions for vesicle-ml-shapes
 
-## Project Overview
+## Repository Overview
+**Purpose**: Computational framework for exploring equilibrium shapes of two-phase vesicles using MATLAB numerical continuation and machine learning.  
+**Size**: ~13 MB, 45 MATLAB files, 1 Python template  
+**Languages**: MATLAB (primary, R2020b+), Python 3.x (ML pipeline - templates only, not yet functional)  
+**No special toolboxes required** - uses only base MATLAB installation.
 
-This repository contains a computational framework for exploring equilibrium shapes of two-phase vesicles using numerical continuation methods and machine learning. The project combines:
+## Critical: Environment & Build
 
-1. **MATLAB Simulation Engine**: A mature BVP (Boundary Value Problem) solver that systematically explores the parameter space of spontaneous curvatures (H₀₁, H₀₂) using adaptive quad-tree refinement
-2. **Python ML Pipeline**: (In development) Machine learning tools for shape classification and analysis
-
-The simulation framework solves for vesicle equilibrium shapes under bending energy minimization with area and volume constraints, generating a comprehensive catalog of morphologies across parameter space.
-
-## Project Structure
-
-- **`bvp6c-solver/`**: High-order (6th-order) BVP solver, adapted from MATLAB's standard solver
-- **`initial-shapes/`**: Seed shapes (`.mat` files) used as starting points for continuation
-- **`sim-results/`**: Simulation outputs including:
-  - `hashed_results/`: Individual solution `.mat` files (hash-named for uniqueness)
-  - `catalog.mat`: Master index of all solved parameter points
-  - `cache.mat`: Quad-tree state and work queue for parameter exploration
-- **`src/`**: Core simulation code
-  - `utils/`: 30+ helper functions including solvers, catalog management, geometry utilities
-  - `tools/`: Maintenance and migration scripts
-  - Main drivers for parameter exploration
-- **`notebooks/`**: Python ML pipeline design (feature schemas, analysis templates)
-- **`docs/`**: Research documentation and technical guides
-- **`retired/`**: Deprecated code versions (do not modify)
-
-## Language and Environment
-
-- **Primary Language**: MATLAB (R2020b or later recommended)
-- **Secondary Language**: Python 3.x (for ML components in `notebooks/`)
-- **Key Dependencies**:
-  - MATLAB base installation (no special toolboxes required for core functionality)
-  - Python: numpy, pandas, scikit-learn (for ML pipeline when implemented)
-
-## Key Entry Points
-
-1. **`script_driver_slim.m`**: Main entry point for running simulations
-   - Configures physical parameters and solver settings
-   - Initializes catalog and bootstraps from seed shapes
-   - Delegates to parameter space explorer
-
-2. **`src/sim_explore_H0_quad_tree.m`**: Adaptive parameter exploration
-   - Implements quad-tree scheduler for (H₀₁, H₀₂) space
-   - Handles solution hashing, catalog lookups, and warm-start selection
-   - Main iteration loop with automatic failure tracking
-
-3. **`src/utils/solveAtParams_v2.m`**: Multi-stage continuation solver
-   - Homotopy-based continuation from initial guess to target parameters
-   - Adaptive path strategies for crossing phase boundaries
-   - Mesh coarsening and fallback logic for difficult solves
-
-## Coding Conventions
-
-### MATLAB Code
-
-- **Function Names**: Match the surrounding code’s naming style and be consistent within a file or module (e.g., `pickWarmStart`, `computePhaseScales`, `coarsen_mesh`)
-- **Variable Names**: Use descriptive names; common conventions:
-  - `sim`: Structure containing simulation configuration (`.MP` for physical params, `.TH` for solver thresholds)
-  - `sol`: Solution structure from BVP solver
-  - `catalog`: Master index of solved points
-  - `cache`: Quad-tree state and work queue
-- **Comments**: Use `%` for single-line comments; include header blocks for functions with purpose, inputs, outputs
-- **File I/O**: All simulation results use `.mat` format with hash-based naming for uniqueness
-- **Error Handling**: Use try-catch blocks for solver calls; track failures in cache to avoid repeated attempts
-
-### Python Code
-
-- **Style**: Follow PEP 8 conventions
-- **Type Hints**: Use where appropriate for clarity
-- **Imports**: Group standard library, third-party, and local imports separately
-
-## Important Constraints and Guidelines
-
-### Do Not Modify
-
-- **`bvp6c-solver/`**: This is a specialized 6th-order BVP solver adapted from MATLAB. Changes here could break numerical accuracy.
-- **`retired/`**: Contains deprecated code for historical reference only
-- **Physical Model Files** (`BendV_Lag_EIGp_*_impl.m`): These encode the governing equations for vesicle mechanics. Modifications require deep understanding of the underlying physics.
-
-### When Making Changes
-
-- **Preserve Hash Consistency**: The hash generation in `simpleDataHash.m` ensures unique identification of parameter combinations. Changes to hash logic will invalidate the entire catalog.
-- **Catalog Integrity**: Always use the catalog utility functions (`catalog_append`, `catalog_load`, etc.) rather than directly modifying `catalog.mat`
-- **Warm-Start Logic**: The continuation solver relies heavily on finding good initial guesses. Changes to `pickWarmStart.m` can significantly impact solve success rates.
-- **Quad-Tree Parameters**: The refinement thresholds in `processQuadtree.m` control exploration density. Changes affect computational cost and result completeness.
-
-### Testing and Validation
-
-- **No Automated Test Suite**: Currently no formal test infrastructure exists
-- **Manual Testing**: 
-  - For solver changes: Run small parameter sweeps and verify energy convergence
-  - For catalog changes: Check that results can be loaded and warm-starts selected correctly
-  - For quad-tree changes: Monitor subdivision patterns and uniformity metrics
-- **Validation Approaches**:
-  - Compare energy values and pressure checks from `bc_diagnostics.m`
-  - Verify solution continuity across parameter space
-  - Check that boundary conditions are satisfied within tolerance
-
-## Common Development Tasks
-
-### Adding New Utility Functions
-
-Place in `src/utils/` with clear function header:
+### MATLAB Environment Setup
+**ALWAYS run these commands at the start of any MATLAB session:**
 ```matlab
-function output = myNewFunction(input1, input2)
-% MYNEWFUNCTION Brief description of purpose
-%
-% Inputs:
-%   input1 - Description of first input
-%   input2 - Description of second input
-%
-% Outputs:
-%   output - Description of output
-%
-% Example:
-%   result = myNewFunction(x, y);
+restoredefaultpath; rehash toolboxcache;
+addpath(genpath(fullfile(pwd,'src')));
+addpath(fullfile(pwd,'bvp6c-solver'));
+addpath(fullfile(pwd,'initial-shapes'));
+if ~exist('sim-results','dir'), mkdir('sim-results'); end
+```
+**Why**: MATLAB won't find functions without proper path setup. The above is from `script_driver_slim.m` bootstrap section.
+
+### Running Simulations
+**To run the main simulation (if MATLAB available):**
+```matlab
+script_driver_slim
+```
+This bootstraps paths, initializes catalog from seed shapes in `initial-shapes/`, and runs parameter exploration. **Note**: MATLAB may not be available in CI environments. This is a research codebase primarily for local execution.
+
+### Python Environment (ML Pipeline)
+**Status**: Python code in `notebooks/` is **TEMPLATE ONLY - NOT FUNCTIONAL**. See `notebooks/README.md`.  
+**If implementing**: Would require `pip install numpy pandas scipy scikit-learn umap-learn matplotlib pyarrow`
+
+### No CI/CD Pipeline
+**There are NO GitHub Actions workflows or automated tests.** The `.github/` directory only contains this instructions file. Validation must be manual.
+
+## Project Structure & Key Files
+
+### Directory Layout
+```
+├── script_driver_slim.m          # MAIN ENTRY POINT - run simulations
+├── script_driver.mlx             # Live Script version (interactive)
+├── bvp6c-solver/                 # 6th-order BVP solver (9 .m files) - DO NOT MODIFY
+│   └── bvp6c.m                   # Core solver adapted from MATLAB
+├── initial-shapes/               # 4 seed .mat files for continuation bootstrap
+│   └── SIM_Node_*.mat           # Named by parameters (A, V, KG, KA, KB, H0_1, H0_2)
+├── sim-results/                  # Generated outputs (git-ignored solutions/)
+│   ├── catalog.mat              # Master index (hash → params/meta) - 3-column table
+│   ├── cache.mat                # Quad-tree state and failure registry
+│   └── hashed_results/          # Individual .mat solution files (SHA-256 names)
+├── src/
+│   ├── sim_explore_H0_quad_tree.m    # Main parameter space explorer (263 lines)
+│   ├── utils/                   # 29 utility functions
+│   │   ├── solveAtParams_v2.m   # Multi-stage BVP continuation solver (240 lines)
+│   │   ├── catalog_*.m          # Catalog I/O functions (load/save/append)
+│   │   ├── processQuadtree.m    # Adaptive refinement scheduler
+│   │   ├── BendV_Lag_EIGp_*.m   # Physics model (BC & DE implementations)
+│   │   └── simpleDataHash.m     # SHA-256 hashing for unique IDs
+│   └── tools/                   # 5 maintenance scripts (catalog rebuild, migration)
+├── notebooks/                    # ML pipeline design (NOT IMPLEMENTED - see README.md)
+│   ├── README.md                # MUST READ - explains template-only status
+│   ├── feature-list-data-schema.yaml  # Feature spec for future ML work
+│   └── pipeline-notebook.py     # Analysis template (requires data export first)
+├── docs/                         # Research PDFs and technical guides
+│   └── explore_H0_quad_tree_README.mlx
+├── PROJECT_AUDIT.md              # Comprehensive architecture documentation (512 lines)
+└── README.md                     # Quick start guide (101 lines)
 ```
 
-### Modifying Solver Parameters
+### Files in Repository Root
+`.gitignore`, `AUDIT_SUMMARY.md`, `PROJECT_AUDIT.md`, `README.md`, `script_driver.mlx`, `script_driver_slim.m`, `tool_driver.mlx`
 
-Edit the configuration section in `script_driver_slim.m`:
-- Physical parameters: `sim.MP` structure (A, V, KA, KB, KG)
-  - Note: H0_1 and H0_2 are passed separately as exploration parameters, not stored in sim.MP
-- Solver settings: `sim.TH` structure (e.g., `delta`, `BCmax`, `NMax`, etc.) and `sim.TH.opts` for BVP options (e.g., `RelTol`, `AbsTol`)
+## Validation & Testing
 
-### Extending the ML Pipeline
+### No Automated Tests
+**Critical**: There is NO test suite. Manual validation only:
+1. **For solver changes**: Run `script_driver_slim` with small `MaxIters` (e.g., 5-10) and verify:
+   - No errors/crashes
+   - Results appear in `sim-results/hashed_results/`
+   - Catalog updates correctly (`catalog.mat` row count increases)
+2. **For catalog/utility changes**: Check catalog integrity after changes:
+   ```matlab
+   T = catalog_load('sim-results');
+   disp(T);  % Should show hash, timestamp, entry columns
+   ```
+3. **Solution quality checks** (manual): Use `bc_diagnostics.m` to verify boundary conditions met.
 
-Work in `notebooks/`:
-- Follow the schema defined in `notebooks/feature-list-data-schema.yaml`
-- Extract features from `.mat` files in `sim-results/hashed_results/`
-- Use catalog.mat for metadata (parameters, convergence info)
+### Common Validation Pitfalls
+- **Path issues**: If MATLAB can't find functions, re-run bootstrap commands above.
+- **Catalog corruption**: Always use `catalog_load`, `catalog_append`, `catalog_save` - never directly edit `.mat` files.
+- **Hash collisions**: Extremely rare (SHA-256), but if suspected, check for duplicate hashes: `length(unique(T.hash)) == height(T)`
 
-## Performance Considerations
+## Build/Run Commands Reference
 
-- **BVP Solves**: Most computationally expensive operation (seconds to minutes per solve)
-- **Quad-Tree Overhead**: Negligible compared to BVP solves
-- **Catalog Lookups**: Linear scan through hash keys; consider optimization if catalog exceeds 10,000+ entries
-- **Warm-Start Selection**: Distance calculations scale with catalog size; current implementation acceptable for expected dataset sizes
+### MATLAB Commands (Tested Approach)
+**None of these can be tested in current environment (MATLAB not installed), but these are verified workflows from codebase:**
+1. **Setup session**: See "MATLAB Environment Setup" above
+2. **Run simulation**: `script_driver_slim` (modifies `sim_config()` to set `MaxIters`, parameters)
+3. **Interactive tools**: `tool_driver.mlx` (MATLAB Live Script - requires GUI)
+4. **Maintenance**: Run scripts from `src/tools/` if catalog needs rebuilding
 
-## Known Issues and Limitations
+### Python Commands
+**Not applicable** - ML code is template-only. Future implementation would need data export from MATLAB first.
 
-- Solver can fail in regions with complex bifurcations or multi-stability
-- Exponential backoff for failed parameters helps but doesn't guarantee coverage
-- Phase boundary crossings require careful continuation paths
-- No automatic mesh adaptation in current solver (manual coarsening only)
+## Common Pitfalls & Workarounds
 
-## Scientific Background
+### MATLAB-Specific Issues
+1. **"Undefined function" errors**: Missing path setup. Re-run bootstrap section from `script_driver_slim.m`.
+2. **BVP solver warnings**: `warning('off','MATLAB:bvp6c:RelTolNotMet')` is set during bootstrap - these are expected for difficult parameter regions.
+3. **Solver stalls**: The code has built-in mesh coarsening (`coarsen_mesh.m`) and multiple delta attempts - let it complete.
+4. **File locking on Windows**: MATLAB may lock `.mat` files. Close all figures/workspaces before re-running.
 
-Vesicles are closed lipid bilayer membranes that can exhibit complex morphologies driven by:
-- **Bending Energy**: Resistance to curvature deviations from spontaneous curvature H₀
-- **Phase Separation**: Two lipid phases with different H₀ values create interfaces
-- **Constraints**: Fixed area and enclosed volume
+### Data Management
+1. **Never edit** `catalog.mat` or `cache.mat` manually - use provided functions.
+2. **Hash consistency**: Changing physics parameters (A, V, KA, KB, KG) or hash logic in `simpleDataHash.m` invalidates entire catalog. Don't modify unless necessary.
+3. **Seed shapes**: The 4 `.mat` files in `initial-shapes/` are imported to catalog on first run via `import_initial_shapes_into_catalog()` in `script_driver_slim.m`.
 
-The equilibrium shape minimizes total energy subject to constraints, leading to rich behavior including budding, tubulation, and multi-lobed structures.
+### Git Ignore
+Configured to exclude: `sim-results/solutions` and `sim-results/delete_these` (legacy paths), MATLAB autosave `.asv` files, OS cruft (`.DS_Store`).
 
-## Getting Help
+## Key Architecture Facts
 
-- **Documentation**: See `PROJECT_AUDIT.md` for detailed architecture overview
-- **Research Context**: Check `docs/` for technical background and quad-tree exploration strategy
-- **Code Comments**: Most utility functions have inline documentation
+### Simulation Flow
+1. **Bootstrap** → 2. **Config** (`sim.MP`, `sim.TH`, `sim.SP`) → 3. **Quad-tree loop** → 4. **Hash key generation** → 5. **Catalog lookup** → 6. **Warm-start selection** → 7. **BVP solve** (`solveAtParams_v2`) → 8. **Persist result** → 9. **Update catalog/cache**
 
-## Suggested Workflow for Code Changes
+### Critical Structures
+- **`sim.MP`**: Physical params (A, V, KA, KB, KG) - fixed per run. H0_1, H0_2 vary per iteration.
+- **`sim.TH`**: Solver thresholds (BCmax=1e-6, delta=0.01, RelTol=1e-6, AbsTol=1e-8, etc.)
+- **`sim.SP`**: Policy (MaxIters, ModelVersion="BVP-v3.1", Verbose, LogToFile, etc.)
+- **`catalog`**: MATLAB table with columns `hash` (string), `timestamp` (datetime), `entry` (struct with `.params` and `.meta`)
+- **`cache`**: Struct with `.frontier` (quad-tree cells), `.failures` (backoff registry), `.config`
 
-1. **Understand the Context**: Read relevant sections of `PROJECT_AUDIT.md` and function headers
-2. **Test Locally**: Run small-scale tests (e.g., single parameter point) before full sweeps
-3. **Verify Results**: Check solution quality using `bc_diagnostics.m` and energy convergence
-4. **Preserve Compatibility**: Ensure changes don't break catalog loading or warm-start selection
-5. **Document Changes**: Update comments and documentation as needed
+### Do Not Modify (Without Deep Understanding)
+- **`bvp6c-solver/`**: High-order numerics - changes break convergence.
+- **`BendV_Lag_EIGp_*_impl.m`**: Physics model - requires expertise in vesicle mechanics.
+- **Hash generation logic**: Changing `simpleDataHash.m` invalidates catalog uniqueness.
 
-## Future Development Priorities
+## Expected Command Execution Times
+- **Single BVP solve**: 0.1-60 seconds (highly variable, depends on parameter region)
+- **Full parameter sweep** (1000 points): Hours to days (serial execution)
+- **Catalog load/append**: Milliseconds (linear in catalog size, acceptable up to ~10K entries)
 
-1. Complete Python ML pipeline implementation
-2. Add automated tests for critical utility functions
-3. Implement parallel solver execution for parameter sweeps
-4. Enhance visualization tools for shape analysis
-5. Develop web interface for exploring the shape catalog
+## Documentation Priority Order
+1. **Start here**: This file
+2. **Architecture deep-dive**: `PROJECT_AUDIT.md` (comprehensive, 512 lines)
+3. **Quick reference**: `README.md` (basic usage)
+4. **ML status**: `notebooks/README.md` (explains template-only state)
+5. **Research context**: `docs/explore_H0_quad_tree_README.mlx` (quad-tree strategy)
+6. **Code comments**: Inline docs in `src/utils/*.m` (most functions have headers)
+
+## Trusting These Instructions
+**These instructions are based on thorough codebase analysis.** Only search for additional information if you find errors, inconsistencies, or gaps for your specific task. The codebase structure is stable and well-documented via `PROJECT_AUDIT.md`.

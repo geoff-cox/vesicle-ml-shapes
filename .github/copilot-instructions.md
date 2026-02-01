@@ -50,7 +50,7 @@ This bootstraps paths, initializes catalog from seed shapes in `initial-shapes/`
 ├── src/
 │   ├── sim_explore_H0_quad_tree.m    # Main parameter space explorer (263 lines)
 │   ├── utils/                   # 29 utility functions
-│   │   ├── solveAtParams_v2.m   # Multi-stage BVP continuation solver (240 lines)
+│   │   ├── solveAtParams_v2.m   # Multi-stage BVP continuation solver
 │   │   ├── catalog_*.m          # Catalog I/O functions (load/save/append)
 │   │   ├── processQuadtree.m    # Adaptive refinement scheduler
 │   │   ├── BendV_Lag_EIGp_*.m   # Physics model (BC & DE implementations)

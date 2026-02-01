@@ -1,4 +1,9 @@
 function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
+    % BENDV_LAG_EIGP_BC_IMPL  Boundary conditions at poles and neck junction.
+    % South pole (α phase): regularity in Q,P,r,z plus integral constraints.
+    % North pole (β phase): regularity in Q,P plus integral constraints.
+    % Neck junction: continuity of geometry and force balance between phases.
+
     % -------- Simulation Parameters --------
     kA = par.KA;
     kB = par.KB;

@@ -47,9 +47,10 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
     end
     Hfrom = H0_from;    % (alias used below)
 
-    % Reseed if we cross an axis between Hfrom and Htgt
-    crossesZero = ( (H0_from(1) <= 0 && Htgt(1) >= 0) || (H0_from(1) >= 0 && Htgt(1) <= 0) ) ...
-               || ( (H0_from(2) <= 0 && Htgt(2) >= 0) || (H0_from(2) >= 0 && Htgt(2) <= 0) );
+    % Reseed if we cross an axis between Hfrom and Htgt (avoid saddle crossings).
+    h1Crosses = (H0_from(1) <= 0 && Htgt(1) >= 0) || (H0_from(1) >= 0 && Htgt(1) <= 0);
+    h2Crosses = (H0_from(2) <= 0 && Htgt(2) >= 0) || (H0_from(2) >= 0 && Htgt(2) <= 0);
+    crossesZero = h1Crosses || h2Crosses;
 
     if crossesZero
         say('    ↺ re-seed at [0,0] (crossed axis), trying again…');
@@ -59,6 +60,7 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
     end
 
     % ---------- attempt configuration ----------
+    % Multi-rung continuation: coarse step caps first, then progressively smaller.
     stepCaps = [Inf, 0.50, 0.25, 0.12, 0.06, 0.03];  % H0 stepping ladders
     if isfield(TH,'delta_list') && ~isempty(TH.delta_list)
         deltas = TH.delta_list(:)';
@@ -66,6 +68,7 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
         % default: baseline, slightly larger, and smaller
         deltas = [delta0, min(2*delta0, 0.02), max(0.5*delta0, 5e-3)];
     end
+    % Tolerance ladder: default and a tighter option.
     optSets  = {opts0, bvpset(opts0,'RelTol',1e-5,'AbsTol',1e-7)};
 
     homolog   = [];
@@ -77,6 +80,7 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
     axisFallbackTried = false;
 
     % ---------- main attempt loop ----------
+    % Each rung tries multiple delta/tolerance pairs with bisection on failed segments.
     for rung = 1:numel(stepCaps)
         stepMax = stepCaps(rung);
         say('\n-- Rung %d/%d: stepMax = %.3g --', rung, numel(stepCaps), stepMax);
@@ -96,11 +100,19 @@ function [result, meta] = solveAtParams_v2(params, sim, warm)
                 % Build a segment Hprev -> Htarget with cap stepMax; bisect on failure.
                 Hprev   = H0_from;
                 Htarget = Htgt;
-                maxSeg  = isfinite(stepMax) * stepMax + ~isfinite(stepMax) * norm(Htarget-Hprev);
-                minSeg  = (isfield(TH,'minH0Step') && TH.minH0Step>0) * TH.minH0Step ...
-                          + ~(isfield(TH,'minH0Step') && TH.minH0Step>0) * 0.01;
+                if isfinite(stepMax)
+                    maxSeg = stepMax;
+                else
+                    maxSeg = norm(Htarget - Hprev);
+                end
+                if isfield(TH,'minH0Step') && TH.minH0Step > 0
+                    minSeg = TH.minH0Step;
+                else
+                    minSeg = 0.01;
+                end
 
                 while true
+                    % Cap step length; if larger than maxSeg, take a shorter hop.
                     v = Htarget - Hprev;
                     L = norm(v);
                     if L <= maxSeg

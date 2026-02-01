@@ -47,6 +47,7 @@ function [task, cache] = processQuadtree(cache, T, MP)
 
     tol = 0;
     while ~isempty(cache.QT.queue)
+        % Pop cell; if corner unsolved, requeue immediately for later refinement.
         C = cache.QT.queue{1}; cache.QT.queue(1)=[];
 
         [C, anyUnknown] = refresh_corners_from_catalog(C, T, MP, tol);
@@ -60,6 +61,7 @@ function [task, cache] = processQuadtree(cache, T, MP)
 
         [uniform,mixedEdges] = uniformTest(C, cache.config.eTol, cache.config.pTol, cache.config.shapeTau);
         C.isUniform=uniform; C.mixedEdges=mixedEdges;
+        % Finalize if uniform or we hit depth/cell limits; otherwise subdivide.
         if uniform || C.depth >= cache.config.maxDepth || numel(cache.QT.cells) >= cache.config.maxCells
             cache.QT.cells = [cache.QT.cells; C];
         else

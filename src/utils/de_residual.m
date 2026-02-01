@@ -1,6 +1,6 @@
 function [rMax, rComp, worstIdx] = de_residual(sol, odefun)
-    
-    % Second-order central difference on nonuniform grid, ignoring pole buffers.
+    % DE_RESIDUAL  Max residual of ODE on a nonuniform mesh (central difference).
+    % Uses second-order nonuniform central differences on interior nodes only.
     if isfield(sol,'parameters') && ~isempty(sol.parameters)
         lam = sol.parameters(:);
     end
@@ -9,7 +9,7 @@ function [rMax, rComp, worstIdx] = de_residual(sol, odefun)
     n   = numel(s);
     if n < 3, error('de_residual: need at least 3 mesh points'); end
 
-    % interior nodes (2..n-1)
+    % interior nodes (2..n-1) using nonuniform central difference weights
     h   = diff(s);
     dY  = zeros(size(Y,1), n-2);
     for j = 2:n-1

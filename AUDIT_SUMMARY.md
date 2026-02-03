@@ -111,7 +111,7 @@ All files in the retired directory were superseded versions from earlier refacto
 ### Clean Repository State
 
 ✅ **No Temporary Files:** No `.asv`, `.swp`, `~`, or `.DS_Store` files found  
-✅ **Git Ignore:** Properly configured for `sim-results/solutions` and `sim-results/delete_these`  
+✅ **Git Ignore:** Properly configured for `SimResults/solutions` and `SimResults/delete_these`  
 ✅ **File Count:** 45 MATLAB files (down from 86)  
 ✅ **Repository Size:** ~13MB total  
 

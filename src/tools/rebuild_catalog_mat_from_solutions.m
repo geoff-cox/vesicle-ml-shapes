@@ -1,5 +1,5 @@
 function rebuild_catalog_mat_from_solutions()
-    simDir = fullfile(pwd,'sim-results');
+    simDir = fullfile(pwd,'SimResults');
     solDir = fullfile(simDir,'solutions');
     addpath(fullfile(pwd,'src','utils'));
     T = catalog_load(simDir);

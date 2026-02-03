@@ -1,7 +1,7 @@
 % File: tools/migrate_simresults.m
 % Purpose:
-%   - Consolidate scattered per-run result .mat files into sim-results/solutions/
-%   - (Re)build sim-results/catalog.csv and sim-results/catalog.mat
+%   - Consolidate scattered per-run result .mat files into SimResults/solutions/
+%   - (Re)build SimResults/catalog.csv and SimResults/catalog.mat
 %   - Leave sources in place (copy, don't move) so you can verify before pruning
 %
 % How to run:
@@ -11,7 +11,7 @@
 
 function migrate_simresults()
     root = pwd;
-    simDir = fullfile(root,'sim-results');
+    simDir = fullfile(root,'SimResults');
     solDir = fullfile(simDir,'solutions');
     if ~exist(solDir,'dir'); mkdir(solDir); end
 
@@ -26,7 +26,7 @@ function migrate_simresults()
     end
     files = unique(files);
 
-    % Also include any results already in sim-results/solutions
+    % Also include any results already in SimResults/solutions
     existingFlat = cellstr(string(safe_glob(fullfile(solDir,'*.mat'))));
     fprintf('[migrate] Found %d legacy candidates, %d in flat store already.\n', ...
         numel(files), numel(existingFlat));

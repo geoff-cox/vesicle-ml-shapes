@@ -15,7 +15,7 @@ restoredefaultpath; rehash toolboxcache;
 addpath(genpath(fullfile(pwd,'src')));
 addpath(fullfile(pwd,'bvp6c-solver'));
 addpath(fullfile(pwd,'initial-shapes'));
-if ~exist('sim-results','dir'), mkdir('sim-results'); end
+if ~exist('SimResults','dir'), mkdir('SimResults'); end
 ```
 **Why**: MATLAB won't find functions without proper path setup. The above is from `script_driver_slim.m` bootstrap section.
 
@@ -43,7 +43,7 @@ This bootstraps paths, initializes catalog from seed shapes in `initial-shapes/`
 │   └── bvp6c.m                   # Core solver adapted from MATLAB
 ├── initial-shapes/               # 4 seed .mat files for continuation bootstrap
 │   └── SIM_Node_*.mat           # Named by parameters (A, V, KG, KA, KB, H0_1, H0_2)
-├── sim-results/                  # Generated outputs (git-ignored solutions/)
+├── SimResults/                  # Generated outputs (git-ignored solutions/)
 │   ├── catalog.mat              # Master index (hash → params/meta) - 3-column table
 │   ├── cache.mat                # Quad-tree state and failure registry
 │   └── hashed_results/          # Individual .mat solution files (SHA-256 names)
@@ -75,11 +75,11 @@ This bootstraps paths, initializes catalog from seed shapes in `initial-shapes/`
 **Critical**: There is NO test suite. Manual validation only:
 1. **For solver changes**: Run `script_driver_slim` with small `MaxIters` (e.g., 5-10) and verify:
    - No errors/crashes
-   - Results appear in `sim-results/hashed_results/`
+   - Results appear in `SimResults/hashed_results/`
    - Catalog updates correctly (`catalog.mat` row count increases)
 2. **For catalog/utility changes**: Check catalog integrity after changes:
    ```matlab
-   T = catalog_load('sim-results');
+   T = catalog_load('SimResults');
    disp(T);  % Should show hash, timestamp, entry columns
    ```
 3. **Solution quality checks** (manual): Use `bc_diagnostics.m` to verify boundary conditions met.
@@ -115,7 +115,7 @@ This bootstraps paths, initializes catalog from seed shapes in `initial-shapes/`
 3. **Seed shapes**: The 4 `.mat` files in `initial-shapes/` are imported to catalog on first run via `import_initial_shapes_into_catalog()` in `script_driver_slim.m`.
 
 ### Git Ignore
-Repository-level `.gitignore` is currently configured to exclude only `sim-results/solutions` and `sim-results/delete_these` (legacy result paths).
+Repository-level `.gitignore` is currently configured to exclude only `SimResults/solutions` and `SimResults/delete_these` (legacy result paths).
 
 ## Key Architecture Facts
 

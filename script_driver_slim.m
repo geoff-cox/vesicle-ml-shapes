@@ -57,10 +57,10 @@ function warnState = bootstrap
     addpath(genpath(fullfile(pwd,'src')));
     addpath(fullfile(pwd,'bvp6c-solver'));
     addpath(fullfile(pwd,'initial-shapes'));
-    if ~exist('sim-results','dir'), mkdir('sim-results'); end
+    if ~exist('SimResults','dir'), mkdir('SimResults'); end
 
     % Seed import
-    import_initial_shapes_into_catalog(fullfile(pwd,'initial-shapes'), fullfile(pwd,'sim-results'));
+    import_initial_shapes_into_catalog(fullfile(pwd,'initial-shapes'), fullfile(pwd,'SimResults'));
 
     disp('MATLAB environment initialized for Vesicle Simulation Project.');
     ver

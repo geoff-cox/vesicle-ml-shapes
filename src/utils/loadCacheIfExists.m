@@ -1,10 +1,10 @@
 function cache = loadCacheIfExists(simDir)
 % LOADCACHEIFEXISTS  MAT-only cache loader for the unified layout.
-% Reads sim-results/cache.mat if present; otherwise returns a fresh struct.
+% Reads SimResults/cache.mat if present; otherwise returns a fresh struct.
 
     if isstruct(simDir) && isfield(simDir,'paths') && isfield(simDir.paths,'root')
         % Backward-compat: someone passed the old "S" struct
-        simDir = fullfile(simDir.paths.root, 'sim-results');
+        simDir = fullfile(simDir.paths.root, 'SimResults');
     end
 
     f = fullfile(simDir, 'cache.mat');

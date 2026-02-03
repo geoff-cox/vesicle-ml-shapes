@@ -89,7 +89,7 @@ vesicle-ml-shapes/
   7. Update catalog and cache
 - Includes failure tracking with exponential backoff to avoid repeated failed solves
 
-**C. BVP Solver (`solveAtParams_v2.m`)**
+**C. BVP Solver (`solveAtParams.m`)**
 - Multi-rung continuation solver for vesicle equilibrium shapes
 - Handles homotopy from initial guess to target (H₀₁, H₀₂)
 - Implements adaptive path strategies:

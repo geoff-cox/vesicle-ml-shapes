@@ -1,9 +1,0 @@
-function rmin = local_min_radius_interior(sol)
-% Min radius away from poles (ignore s=0 and s=pi so r=0 at poles is allowed)
-    rA = abs(sol.y(4,:));
-    rB = abs(sol.y(13,:));
-    if numel(rA) >= 3, rA = rA(2:end-1); end
-    if numel(rB) >= 3, rB = rB(2:end-1); end
-    rmin = min([rA(:); rB(:)]);
-    if isempty(rmin), rmin = Inf; end
-end

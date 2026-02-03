@@ -9,7 +9,7 @@ cleanup(warnState);
 function S = sim_config()
 
     % ---- simulation settings ----
-    SP.MaxIters = 15;%1e9;
+    SP.MaxIters = 1e5;
     SP.ModelVersion = "BVP-v3.1";
     SP.LogToFile = true;
     SP.Verbose = true;

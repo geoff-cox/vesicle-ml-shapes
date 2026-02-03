@@ -152,16 +152,18 @@ function [result, meta] = solveAtParams(params, sim, warm)
                 end
 
                 if ~isempty(curSol)
-                    [BCmax, rep]  = bc_diagnostics(curSol, bcfun);
-                    [DEmax,~,~]   = de_residual(curSol, odefun);
-                    rmin          = rep.min_r;
+                    [BCmax, rep]	= bc_diagnostics(curSol, bcfun);
+                    [DEmax,~,~]		= de_residual(curSol, odefun);
+                    rmin			= rep.min_r;
+					rNeck			= min(abs(curSol.y(4,end)), abs(curSol.y(13,end)));
+					rNeckMin		= defaultArg(TH,'rNeckMin', 0);  % 0 disables
 
-                    if (BCmax <= TH.BCmax) && (DEmax <= TH.DEmaxHard) && (rmin >= TH.rMin)
-                        sol = curSol; accepted = true;
-                        break
-                    else
-                        initSol = curSol; % warm next attempt
-                    end
+					if (BCmax <= TH.BCmax) && (DEmax <= TH.DEmaxHard) && (rmin >= TH.rMin) && (rNeck >= rNeckMin)
+						sol = curSol; accepted = true;
+						break
+					else
+						initSol = curSol; % warm next attempt
+					end
                 end
 
                 if accepted, break; end
@@ -185,14 +187,14 @@ function [result, meta] = solveAtParams(params, sim, warm)
     result = struct('sol', sol, 'mesh', numel(sol.x));
     meta   = struct('label',label,'E',E_total,'P',P_osm, ...
                     'BCmax',BCmax,'DEmax',DEmax,'mesh',result.mesh, ...
-                    'rMinAway', rep.min_r);
+                    'rMinAway', rep.min_r, 'rNeck', rNeck);
 
     if saveHomotopy
         meta.homotopy = homolog;
     end
 
-    say('=== accepted: mesh=%d | BC=%.2e | DE=%.2e | rMinAway=%.2e ===\n', ...
-        meta.mesh, meta.BCmax, meta.DEmax, meta.rMinAway);
+    say('=== accepted: mesh=%d | BC=%.2e | DE=%.2e | rMinAway=%.2e | rNeck=%.2e ===\n', ...
+        meta.mesh, meta.BCmax, meta.DEmax, meta.rMinAway, meta.rNeck);
 end
 
 % ---- helpers ----
@@ -219,6 +221,7 @@ end
 
 function [BCmax, report] = bc_diagnostics(sol, bcfun)
 
+    lam = [];
     if isfield(sol,'parameters') && ~isempty(sol.parameters)
         lam = sol.parameters(:);
     end
@@ -338,6 +341,8 @@ end
 function [rMax, rComp, worstIdx] = de_residual(sol, odefun)
     % DE_RESIDUAL  Max residual of ODE on a nonuniform mesh (central difference).
     % Uses second-order nonuniform central differences on interior nodes only.
+
+    lam = [];
     if isfield(sol,'parameters') && ~isempty(sol.parameters)
         lam = sol.parameters(:);
     end

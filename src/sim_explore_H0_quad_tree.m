@@ -252,7 +252,7 @@ end
 
 function saveCache(simDir, cache)
     f   = fullfile(simDir, 'cache.mat');
-    tmp = [f '.tmp'];
+    tmp = f + ".tmp";
     save(tmp, 'cache', '-v7');
     movefile(tmp, f, 'f');
 end

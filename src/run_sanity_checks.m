@@ -92,6 +92,7 @@ function warnState = bootstrap()
     addpath(fullfile(root,'src','utils'));
     addpath(fullfile(root,'src','quadtree'));
     addpath(fullfile(root,'src','model'));
+    addpath(fullfile(root,'src','bvp6c-solver'));
 
     warning('off','MATLAB:singularMatrix');
     warning('off','MATLAB:nearlySingularMatrix');

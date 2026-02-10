@@ -558,8 +558,11 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
     beta_vars = num2cell(y(10:18));
 
     % RHS_pole handles singular pole expansion; RHS is bulk form.
+    % FIXED: Pole expansion requires sin(S)/r = 1 (from ds/dS consistency)
+    % Previous version incorrectly assumed sin(S)/r = 1/2, causing factor-of-2 errors
+    % Corrected: February 2026 - Issue 1 from code audit
     RHS_pole = @(Q, H, P, r, z, L, s, V, B, S, k, H0, phase) [ ...
-        H*L + 0.5*lam - k*H0*H^2 + 0.5*k*H*H0^2;
+        2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
         0;
         H;
         phase;

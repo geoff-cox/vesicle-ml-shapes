@@ -2,9 +2,9 @@
 
 ## Executive Summary
 
-**Issue 1 is PARTIALLY VALID with important caveats about nondimensionalization.**
+**Issue 1 is INVALID as a code/math error; it is only valid as a documentation and nondimensionalization-clarity concern.**
 
-The pole expansion coefficients are **correct** given the specific nondimensionalization scheme used in this code (energies scaled by 2πσR₀), but the MATHEMATICAL_ANALYSIS.md document appears to have analyzed the equations without accounting for this scaling.
+The pole expansion coefficients in the implementation are **not consistent** with the stated nondimensionalization scheme (energies scaled by 2πσR₀), so the underlying code/math is incorrect; however, the confusion is amplified by how the scaling is described in the documentation, which is the only sense in which Issue 1 is "valid."
 
 ## Problem Setup
 

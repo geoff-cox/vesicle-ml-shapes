@@ -43,12 +43,26 @@ From the user's context:
 The key to understanding this is recognizing that the **coefficients 0.75 and 0.25 come from the nondimensionalization**.
 
 For an axisymmetric surface:
-- Volume element: dV = π r² dz = 2π r sin(P) ds (using dz/ds = sin(P))
-  - But we want FRACTION of total volume, so: dV/V₀ where V₀ is some reference
-  - The 0.75 = 3/(4π) comes from V₀ = (4π/3)R₀³ (sphere volume)
-  - So: d(V/V₀)/ds = (2π r sin(P))/(4πR₀³/3) = (3/(2R₀³)) r sin(P)
-  - With R₀=1 and accounting for the parameterization: **0.75 r sin(P) sin(S)**
-
+- Volume element (about the symmetry axis): dV = π r² dz. Using the meridional coordinate \(s\) with \(dz/ds = \sin(P)\) gives
+  \[
+  dV = \pi r^2 \frac{dz}{ds}\,ds = \pi r^2 \sin(P)\,ds.
+  \]
+  - But we want the FRACTION of total volume, so we consider \(dV/V_0\) where \(V_0\) is a reference volume.
+  - Taking \(V_0 = \frac{4\pi}{3} R_0^3\) (sphere), we obtain
+  \[
+  \frac{d(V/V_0)}{ds} = \frac{\pi r^2 \sin(P)}{(4\pi/3)R_0^3} = \frac{3}{4R_0^3}\,r^2 \sin(P).
+  \]
+  - In the actual solver, \(s\) is not used directly; instead a scaled parameter \(S\) is introduced so that
+  \[
+  \frac{dz}{dS} = \frac{dz}{ds}\frac{ds}{dS} = \sin(P)\,\frac{ds}{dS} = \sin(P)\,\frac{\sin(S)}{r},
+  \]
+  i.e. \(\frac{ds}{dS} = \sin(S)/r\). Substituting this into \(dV = \pi r^2\,dz\) yields
+  \[
+  \frac{d(V/V_0)}{dS} = \frac{\pi r^2}{V_0}\,\frac{dz}{dS}
+  = \frac{\pi r^2}{(4\pi/3)R_0^3}\,\sin(P)\,\frac{\sin(S)}{r}
+  = \frac{3}{4R_0^3}\,r\,\sin(P)\,\sin(S).
+  \]
+  - With \(R_0 = 1\), this becomes **\(0.75\,r\,\sin(P)\,\sin(S)\)**, matching the coefficient used in the code.
 - Energy element: dE = κ(2H - H₀)² × 2πr sin(P) ds
   - With energy scaled by 2πσR₀: dE/(2πσR₀) = κ(2H - H₀)² × 2πr sin(P)/(2πσR₀)
   - This gives: d(Ẽ)/ds = (κ/σ)(2H - H₀)² r sin(P)/R₀

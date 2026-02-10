@@ -35,9 +35,9 @@ The audit compared equations in different coordinate representations without acc
 
 ```python
 # Symbolic proof with SymPy:
-bulk_at_pole = -2*H²*H0*k + H*H0²*k + 2*H*L + lam
+bulk_at_pole = -2*H**2*H0*k + H*H0**2*k + 2*H*L + lam
 pole_expected = bulk_at_pole * (1/2)  
-pole_code = H*L + 0.5*lam - k*H0*H² + 0.5*k*H*H0²
+pole_code = H*L + 0.5*lam - k*H0*H**2 + 0.5*k*H*H0**2
 difference = pole_expected - pole_code  # = 0 ✓✓✓
 ```
 

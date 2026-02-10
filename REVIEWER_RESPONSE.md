@@ -1,7 +1,7 @@
 # Response to Reviewer Comments
 
 **Date:** February 10, 2026  
-**Re:** Issue 1 Assessment and Fix
+**Regarding:** Issue 1 Assessment and Fix
 
 ---
 

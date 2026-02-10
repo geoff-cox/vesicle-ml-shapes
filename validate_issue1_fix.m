@@ -128,8 +128,9 @@ function test_sphere_geometry()
     k = 1.0;  % Example bending rigidity
     
     fprintf('\n  Mathematical check at pole (H = H0 = %.2f, Q = 0):\n', H0_sphere);
-    fprintf('    For Q to remain 0, need: 2*H*L + lam - 2*k*H^2 + k*H^2 ≈ 0\n');
-    fprintf('    Simplifies to: 2*L + lam - k ≈ 0\n');
+    fprintf('    For Q to remain 0, need: 2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2 ≈ 0\n');
+    fprintf('    With H = H0: 2*H0*L + lam - 2*k*H0^3 + k*H0^3 = 2*H0*L + lam - k*H0^3 ≈ 0\n');
+    fprintf('    Simplifies to: 2*H0*L + lam ≈ k*H0^3\n');
     fprintf('    The Lagrange multipliers L and lam adjust to satisfy this.\n');
     
     fprintf('  ✓ Expected behavior documented\n');

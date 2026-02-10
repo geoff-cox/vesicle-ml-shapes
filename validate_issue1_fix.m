@@ -63,9 +63,11 @@ function test_pole_bulk_consistency()
     RHS_pole_Q = 2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
     
     % Evaluate RHS at boundary (from bulk equation line 574)
-    % Note: At pole, sin(P)/r ≈ H, Q ≈ 0
+    % Note: At pole limit, we should use sin(P)/r → H for consistency
+    % Here we're testing near the boundary, so use actual H value
     sin_S_over_r = sin(S_boundary) / r;
-    RHS_Q = (-Q*cos(P)/r - k*(2*H - H0)*(H*H0 + 2*(H - sin(P)/r)^2) ...
+    H_approx = sin(P) / r;  % This approximation improves as P→0
+    RHS_Q = (-Q*cos(P)/r - k*(2*H - H0)*(H*H0 + 2*(H - H_approx)^2) ...
              + 2*H*L + lam) * sin_S_over_r;
     
     fprintf('  Boundary S = %.6f (delta*pi with delta=%.2f)\n', S_boundary, delta);

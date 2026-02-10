@@ -156,10 +156,10 @@ The evidence: all coefficients are exactly half of what they should be.
 
 **Change at line 562:**
 ```matlab
-# OLD (line 562)
+% OLD (line 562)
     H*L + 0.5*lam - k*H0*H^2 + 0.5*k*H*H0^2;
 
-# NEW (line 562)  
+% NEW (line 562)  
     2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
 ```
 

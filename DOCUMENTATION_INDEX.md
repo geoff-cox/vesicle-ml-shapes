@@ -121,10 +121,10 @@ These concluded Issue 1 was invalid, which was incorrect.
 
 ### The Fix
 ```matlab
-# OLD (WRONG)
+% OLD (WRONG)
 H*L + 0.5*lam - k*H0*H^2 + 0.5*k*H*H0^2;
 
-# NEW (CORRECT)
+% NEW (CORRECT)
 2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
 ```
 

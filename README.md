@@ -2,6 +2,28 @@
 
 A computational framework for exploring equilibrium shapes of two-phase vesicles using numerical continuation methods and machine learning.
 
+## ⚠️ IMPORTANT: Critical Bug Fix (February 2026)
+
+**A mathematical error was discovered and fixed in the pole expansion equations.** All simulation results generated before this fix should be considered quantitatively incorrect.
+
+**What was fixed:**
+- File: `src/utils/solveAtParams.m`, line 562
+- Issue: Q-equation pole expansion coefficients were wrong by factor of 2
+- Impact: All stress distributions, energies, and curvatures affected
+- Status: **FIXED** - code now uses correct coefficients
+
+**Documentation:**
+- `CORRECTED_ANALYSIS_README.md` - Summary of error and fix
+- `ASSESSMENT_ISSUE_1.md` - Detailed mathematical analysis
+- `ISSUE_1_FIX_AND_VALIDATION.md` - Validation procedures
+
+**Action required:**
+- Re-run simulations with fixed code
+- Do not trust results from before this fix
+- See validation script: `validate_issue1_fix.m`
+
+---
+
 ## Overview
 
 This project systematically explores the parameter space of two-phase vesicles by solving boundary value problems (BVPs) for equilibrium shapes under bending energy minimization. It combines:

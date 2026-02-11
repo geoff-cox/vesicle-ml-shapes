@@ -186,6 +186,7 @@ function h = corner_hash(corner, MP, modelVersion, branchTag)
 % Compute the physics-aware hash for a corner point, matching the driver.
 % Includes branch_tag when non-empty (for hysteresis / multi-solution).
     if nargin < 4, branchTag = ""; end
+    branchTag = normalize_branch_tag(branchTag);
     key = struct( ...
         'model_version', string(modelVersion), ...
         'H0_1', corner(1), 'H0_2', corner(2), ...
@@ -194,8 +195,8 @@ function h = corner_hash(corner, MP, modelVersion, branchTag)
         'KA', getfield_default_s(MP,'KA',NaN), ...
         'KB', getfield_default_s(MP,'KB',NaN), ...
         'KG', getfield_default_s(MP,'KG',NaN));
-    if strlength(string(branchTag)) > 0
-        key.branch_tag = string(branchTag);
+    if strlength(branchTag) > 0
+        key.branch_tag = branchTag;
     end
     h = simpleDataHash(key, 'SHA-256');
 end
@@ -204,9 +205,22 @@ function v = getfield_default_s(S, name, def)
     if isstruct(S) && isfield(S, name), v = S.(name); else, v = def; end
 end
 
+function bt = normalize_branch_tag(bt)
+% Coerce branch_tag to a scalar string; missing/empty/non-scalar → "".
+    if isempty(bt)
+        bt = ""; return
+    end
+    bt = string(bt);
+    if isempty(bt)
+        bt = ""; return
+    end
+    bt = bt(1);
+end
+
 % ---------------- catalog lookup ----------------
 function [C, anyUnknown] = refresh_corners_from_catalog(C, T, MP, tol, branchTag)
     if nargin < 5, branchTag = ""; end
+    branchTag = normalize_branch_tag(branchTag);
     anyUnknown = false;
     for i=1:4
         H1 = C.corners(i,1); H2 = C.corners(i,2);
@@ -221,6 +235,7 @@ end
 
 function [solved,label,E,P] = lookup_in_catalog(T,H1,H2,MP,tol,branchTag)
     if nargin < 6, branchTag = ""; end
+    branchTag = normalize_branch_tag(branchTag);
     solved=false; label=""; E=NaN; P=NaN;
     if isempty(T) || ~any(T.Properties.VariableNames=="entry"), return; end
 
@@ -253,9 +268,9 @@ function [solved,label,E,P] = lookup_in_catalog(T,H1,H2,MP,tol,branchTag)
         & abs(KGv- MP.KG) <= tolPhys;
 
     % branch-aware filtering: match branch_tag when non-empty
-    if strlength(string(branchTag)) > 0 && any(hit)
+    if strlength(branchTag) > 0 && any(hit)
         btags = cellfun(@(e) string(g_str(e,'meta','branch_tag')), entries);
-        hit = hit & (btags == string(branchTag));
+        hit = hit & (btags == branchTag);
     end
 
     if any(hit)

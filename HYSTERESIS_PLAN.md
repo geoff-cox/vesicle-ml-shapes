@@ -58,8 +58,10 @@ sim.SP.BranchTag = "upper";   % or "lower", "path-A", etc.
 sim_explore_H0_quad_tree(sim);
 ```
 
-Each branch-tag run maintains its own quadtree exploration, warm-start chain, and
-failure registry within the shared catalog.  The catalog will contain multiple
+Each branch-tag run shares the same `cache.mat` file, but the quadtree state
+(`cache.QT`) and failure registry are automatically reset when the branch tag
+changes from the previous run.  This ensures each branch explores the
+`(H0_1, H0_2)` plane independently.  The catalog will contain multiple
 entries for the same `(H0_1, H0_2)`, distinguished by their hash (which includes
 the branch tag) and the `meta.branch_tag` field.
 

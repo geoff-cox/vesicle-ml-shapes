@@ -57,6 +57,17 @@ function sim_explore_H0_quad_tree(sim)
     % Store physics context for hash-aware failure matching in processQuadtree
     cache.config.modelVersion = string(sim.SP.ModelVersion);
     cache.config.MP = sim.MP;
+
+    % Reset quadtree state when branch tag changes from a prior run's cache.
+    % Each branch explores the (H0_1, H0_2) plane independently; reusing a
+    % stale QT queue/cells from a different branch would skip regions.
+    prevBranch = getfield_default(cache.config, 'branchTag', "");
+    if isempty(prevBranch), prevBranch = ""; else, prevBranch = string(prevBranch); prevBranch = prevBranch(1); end
+    if prevBranch ~= BRANCH_TAG
+        say('[driver] branch changed (%s → %s); resetting quadtree state.', prevBranch, BRANCH_TAG);
+        if isfield(cache,'QT'), cache = rmfield(cache,'QT'); end
+        cache.failures = struct('hash',{},'count',{},'lastIter',{},'blockUntil',{},'lastMsg',{},'H0_1',{},'H0_2',{});
+    end
     cache.config.branchTag = BRANCH_TAG;
 
     iters = 0;

@@ -1,14 +1,14 @@
 % preview_one_solution.m
 % Visualization: 2D profile of alpha and beta phase shapes.
-%
-% Usage: run from the src/ directory (or add src/ to path first).
+%sim-results
+% Usage: run from tsim-resultsrectory (or add src/ to path first).
 
 here = fileparts(mfilename('fullpath'));
 srcRoot = fileparts(here);
 addpath(genpath(srcRoot));
 
 projRoot = fileparts(srcRoot);
-resDir   = fullfile(projRoot, 'SimResults', 'hashed_results');
+resDir   = fullfile(projRoot, 'sim-results', 'hashed_results');
 d = dir(fullfile(resDir, '*.mat'));
 assert(~isempty(d), 'No hashed results found yet.');
 

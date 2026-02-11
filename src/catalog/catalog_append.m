@@ -1,5 +1,5 @@
 function T = catalog_append(simDir, hash, entry, ts)
-% CATALOG_APPEND  Append/update SimResults/catalog.mat (MAT-only, UTC timestamps)
+% CATALOG_APPEND  Append/update sim-results/catalog.mat (MAT-only, UTC timestamps)
 %
 % T = catalog_append(simDir, hash, entry)       — load, append, save
 % T = catalog_append(T,      hash, entry)       — in-memory only (no I/O)

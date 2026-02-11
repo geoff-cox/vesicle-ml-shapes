@@ -5,7 +5,7 @@ function sim_explore_H0_quad_tree(sim)
     srcRoot  = fileparts(here);                    % src
     projRoot = fileparts(srcRoot);                 % repo root
 
-    simDir = getfield_default(sim.SP, 'SimDir', fullfile(projRoot,'SimResults'));
+    simDir = getfield_default(sim.SP, 'SimDir', fullfile(projRoot,'sim-results'));
     solDir = fullfile(simDir,'hashed_results');
     if ~exist(simDir,'dir'), mkdir(simDir); end
     if ~exist(solDir,'dir'), mkdir(solDir); end %#ok<*NOPTS>

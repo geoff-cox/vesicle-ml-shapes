@@ -17,7 +17,7 @@ function script_sanity_checks(varargin)
     addpath(genpath(srcRoot));
 
     tmpRoot = fullfile(tempdir, "vesicle_sanity_" + string(java.util.UUID.randomUUID));
-    simDir  = fullfile(tmpRoot, 'SimResults');
+    simDir  = fullfile(tmpRoot, 'sim-results');
     mkdir(simDir); mkdir(fullfile(simDir,'hashed_results'));
 
     % --- build sim config ---

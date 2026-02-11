@@ -52,22 +52,22 @@ src/
 ## Pipeline Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────┐
 │                     script_driver_slim.m                           │
-│  ┌──────────┐    ┌──────────────┐    ┌────────────────────────┐   │
-│  │bootstrap()│───▶│ sim_config() │───▶│sim_explore_H0_quad_tree│   │
-│  └──────────┘    └──────────────┘    └───────────┬────────────┘   │
-│   • addpath       • SP (settings)                │                │
-│   • import seeds  • TH (thresholds)     ┌────────▼────────┐      │
-│   • suppress warn • MP (physics)        │   MAIN LOOP     │      │
-│                                         │   (up to 1e5    │      │
-│                                         │    iterations)  │      │
-│                                         └────────┬────────┘      │
-│                                                  │               │
-│  ┌──────────┐                                    │               │
-│  │ cleanup()│◀───────────────────────────────────┘               │
-│  └──────────┘                                                    │
-└─────────────────────────────────────────────────────────────────────┘
+│  ┌───────────┐     ┌──────────────┐    ┌────────────────────────┐  │
+│  │bootstrap()│───> │ sim_config() │───>│sim_explore_H0_quad_tree│  │
+│  └───────────┘     └──────────────┘    └───────────┬────────────┘  │
+│   • addpath       • SP (settings)                  │               │
+│   • import seeds  • TH (thresholds)       ┌────────▼────────┐      │
+│   • suppress warn • MP (physics)          │   MAIN LOOP     │      │
+│                                           │   (up to 1e5    │      │
+│                                           │    iterations)  │      │
+│                                           └────────┬────────┘      │
+│                                                    │               │
+│  ┌──────────┐                                      │               │
+│  │ cleanup()│<─────────────────────────────────────┘               │
+│  └──────────┘                                                      │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Main Loop Detail
@@ -119,7 +119,7 @@ Each iteration of `sim_explore_H0_quad_tree` follows this sequence:
 └───────────────┬───────────────────────────────────┘
                 │
         ┌───────▼───────┐
-        │ Pop next cell │◀──────────────────────────────────┐
+        │ Pop next cell │<──────────────────────────────────┐
         │ from queue    │                                   │
         └───────┬───────┘                                   │
                 │                                           │
@@ -127,7 +127,7 @@ Each iteration of `sim_explore_H0_quad_tree` follows this sequence:
         │ Any unsolved       │                              │
         │ corners?           │                              │
         ├─ YES → return task │                              │
-        │   (H0_1, H0_2)    │                              │
+        │   (H0_1, H0_2)     │                              │
         │   for that corner  │                              │
         │                    │                              │
         ├─ NO ↓              │                              │
@@ -169,12 +169,12 @@ If all rungs fail → error (caught by driver, recorded in failure registry)
 ```
 
 **Acceptance gates** (all must pass):
-| Gate | Threshold | Description |
-|------|-----------|-------------|
-| `BCmax` | ≤ 1e-6 | Maximum boundary condition residual |
-| `DEmax` | ≤ 2e-1 | Maximum ODE residual (interior) |
-| `rMin` | ≥ 1e-3 | Minimum radius away from poles |
-| `rNeck` | ≥ 0 | Neck radius (disabled by default) |
+|   Gate  | Threshold |             Description             |
+|---------|-----------|-------------------------------------|
+| `BCmax` | ≤ 1e-6    | Maximum boundary condition residual |
+| `DEmax` | ≤ 2e-1    | Maximum ODE residual (interior)     |
+| `rMin`  | ≥ 1e-3    | Minimum radius away from poles      |
+| `rNeck` | ≥ 0       | Neck radius (disabled by default)   |
 
 ---
 
@@ -184,11 +184,11 @@ If all rungs fail → error (caught by driver, recorded in failure registry)
 
 The catalog uses MATLAB's native `.mat` format stored as a 3-column table:
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `hash` | string | SHA-256 of physics parameters (unique key) |
-| `timestamp` | datetime (UTC) | When the entry was created/updated |
-| `entry` | cell of struct | `{params: {...}, meta: {...}}` |
+|   Column    |			Type				|								Description										|
+|-------------|-----------------|---------------------------------------------|
+| `hash`      | string          | SHA-256 of physics parameters (unique key)  |
+| `timestamp` | datetime (UTC)  | When the entry was created/updated          |
+| `entry`     | cell of struct  | `{params: {...}, meta: {...}}`              |
 
 **Why MAT-based (not SQLite)?**
 
@@ -212,14 +212,14 @@ entry.meta     % label, E, P, BCmax, DEmax, mesh, rMinAway, rNeck, hash, version
 
 ### Individual Solution Files
 
-Each accepted solution is saved to `SimResults/hashed_results/<hash>.mat`
+Each accepted solution is saved to `sim-results/hashed_results/<hash>.mat`
 containing:
 - `result.sol` — full BVP solution struct (mesh, state vector, parameters)
 - `meta` — diagnostics, label, energy, pressure, residuals
 
 ### Cache File
 
-`SimResults/cache.mat` stores the quadtree state between runs:
+`sim-results/cache.mat` stores the quadtree state between runs:
 - `cache.QT.queue` — pending quadtree cells
 - `cache.QT.cells` — resolved (uniform or max-depth) cells
 - `cache.failures` — failure registry with exponential backoff

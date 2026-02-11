@@ -9,7 +9,7 @@ addpath(genpath(srcRoot));
 
 % load a recent accepted solution
 projRoot = fileparts(srcRoot);
-resDir   = fullfile(projRoot, 'SimResults', 'hashed_results');
+resDir   = fullfile(projRoot, 'sim-results', 'hashed_results');
 d = dir(fullfile(resDir, '*.mat'));
 assert(~isempty(d), 'No hashed results found yet.');
 

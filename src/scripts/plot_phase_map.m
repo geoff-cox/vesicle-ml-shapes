@@ -8,7 +8,7 @@ srcRoot = fileparts(here);
 addpath(genpath(srcRoot));
 
 projRoot = fileparts(srcRoot);
-simDir   = fullfile(projRoot, 'SimResults');
+simDir   = fullfile(projRoot, 'sim-results');
 T = catalog_load(simDir);
 
 assert(height(T) > 0, 'Catalog is empty — run simulations first.');

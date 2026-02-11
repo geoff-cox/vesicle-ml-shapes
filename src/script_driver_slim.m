@@ -63,9 +63,9 @@ function warnState = bootstrap()
     restoredefaultpath; rehash toolboxcache;
     addpath(genpath(srcRoot));
 
-    % SimResults lives next to src/
+    % sim-results lives next to src/
     projRoot = fileparts(srcRoot);
-    simDir   = fullfile(projRoot, 'SimResults');
+    simDir   = fullfile(projRoot, 'sim-results');
     if ~exist(simDir,'dir'), mkdir(simDir); end
 
     ishapesDir = fullfile(srcRoot, 'initial-shapes');

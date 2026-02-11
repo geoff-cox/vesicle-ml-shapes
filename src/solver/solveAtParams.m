@@ -527,7 +527,7 @@ function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
             - kA*(2*HAk - H0(1)) ...
             + kG*(sin(PAk)/rAk);
         kA*(2*HAk - H0(1))*(HAk - sin(PAk)/rAk + H0(1)/2) ...
-        - kB*(2*HBk - H0(2))*(HBk - sin(PAk)/rAk + H0(2)/2) ...
+        - kB*(2*HBk - H0(2))*(HBk - sin(PBk)/rBk + H0(2)/2) ...
         - (cos(PAk)/rAk) + LBk - LAk
     ];
 
@@ -562,7 +562,8 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
     % Previous version incorrectly assumed sin(S)/r = 1/2, causing factor-of-2 errors
     % Corrected: February 2026 - Issue 1 from code audit
     RHS_pole = @(Q, H, P, r, z, L, s, V, B, S, k, H0, phase) [ ...
-        2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
+        %2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
+        H*L + 0.5*lam - k*H0*H^2 + 0.5*k*H*H0^2;
         0;
         H;
         phase;

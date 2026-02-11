@@ -36,7 +36,19 @@ function sim_explore_H0_quad_tree(sim)
     USE_WARMSTART = getfield_default(sim.SP, 'UseWarmStart', true);
 
     % ---- hysteresis: branch tag for multi-solution support ----
-    BRANCH_TAG    = string(getfield_default(sim.SP, 'BranchTag', ""));
+    rawBranchTag = getfield_default(sim.SP, 'BranchTag', "");
+    if isempty(rawBranchTag)
+        % Normalize missing/empty to empty scalar string
+        BRANCH_TAG = "";
+    else
+        % Convert to string and take at most the first element to ensure scalar
+        tmpBranchTag = string(rawBranchTag);
+        if isempty(tmpBranchTag)
+            BRANCH_TAG = "";
+        else
+            BRANCH_TAG = tmpBranchTag(1);
+        end
+    end
 
     solverFcn = getfield_default(sim.SP, 'SolverFcn', @solveAtParams);
 

@@ -39,6 +39,10 @@ function sim_explore_H0_quad_tree(sim)
 
     say('[driver] start | version=%s | maxIters=%g', string(sim.SP.ModelVersion), sim.SP.MaxIters);
 
+    % Store physics context for hash-aware failure matching in processQuadtree
+    cache.config.modelVersion = string(sim.SP.ModelVersion);
+    cache.config.MP = sim.MP;
+
     iters = 0;
     while iters < sim.SP.MaxIters
         iters = iters + 1;

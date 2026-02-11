@@ -62,28 +62,24 @@ function [task, cache] = processQuadtree(cache, T, MP)
                                 C.cornerEnergy(jj) = NaN;
                                 C.cornerPressure(jj) = NaN;
                             end
-                            % All unsolved corners are permanently blocked and have
-                            % just been marked as solved with label "failed". Proceed
-                            % to the uniform-test / refinement logic in this same
-                            % iteration (avoid re-calling refresh_corners_from_catalog
-                            % on this cell, which would reset these labels).
                             deferredCount = 0;
                             anyUnknown = false;
+                            % Fall through to the uniform-test below.
+                        else
+                            % Fallback: choose the first unsolved corner even if blocked, so that
+                            % the driver can advance iter and eventually let cooldown expire.
+                            k_fallback = find(~C.cornerSolved,1,'first');
+                            if isempty(k_fallback)
+                                % Defensive: no unsolved corners found; exit loop as before.
+                                break
+                            end
+                            params = struct('H0_1',C.corners(k_fallback,1), ...
+                                            'H0_2',C.corners(k_fallback,2));
+                            % Re-queue this cell at the front so it will be revisited.
+                            cache.QT.queue = [{C}, cache.QT.queue];
+                            task = struct('params',params);
+                            return
                         end
-
-                        % Fallback: choose the first unsolved corner even if blocked, so that
-                        % the driver can advance iter and eventually let cooldown expire.
-                        k_fallback = find(~C.cornerSolved,1,'first');
-                        if isempty(k_fallback)
-                            % Defensive: no unsolved corners found; exit loop as before.
-                            break
-                        end
-                        params = struct('H0_1',C.corners(k_fallback,1), ...
-                                        'H0_2',C.corners(k_fallback,2));
-                        % Re-queue this cell at the front so it will be revisited.
-                        cache.QT.queue = [{C}, cache.QT.queue];
-                        task = struct('params',params);
-                        return
                     else
                         % Defer this cell; move on to other queued cells.
                         cache.QT.queue{end+1} = C;
@@ -91,7 +87,9 @@ function [task, cache] = processQuadtree(cache, T, MP)
                     end
                 end
             end
+        end
 
+        if anyUnknown
             params = struct('H0_1',C.corners(k,1),'H0_2',C.corners(k,2));
             cache.QT.queue = [{C}, cache.QT.queue];
             task = struct('params',params);
@@ -130,24 +128,25 @@ end
 function k = pick_unblocked_corner(C, cache)
     k = [];
     it = cache.iter;
-    tol = 1e-12;
+    MP = getfield_default_s(cache.config, 'MP', struct());
+    mv = getfield_default_s(cache.config, 'modelVersion', "");
     for j = 1:size(C.corners,1)
         if C.cornerSolved(j), continue; end
-        h1 = C.corners(j,1); h2 = C.corners(j,2);
-        if ~isBlocked(cache.failures, it, h1, h2, tol)
+        h = corner_hash(C.corners(j,:), MP, mv);
+        if ~isBlocked(cache.failures, it, h)
             k = j; return
         end
     end
 end
 
-function tf = isBlocked(F, it, h1, h2, tol)
+function tf = isBlocked(F, it, hash)
     tf = false;
     if isempty(F), return; end
     if ~isstruct(F), return; end
-    if ~all(isfield(F, {'H0_1','H0_2','blockUntil'})), return; end
+    if ~all(isfield(F, {'hash','blockUntil'})), return; end
 
     for i=1:numel(F)
-        if abs(double(F(i).H0_1)-h1)<tol && abs(double(F(i).H0_2)-h2)<tol
+        if string(F(i).hash) == string(hash)
             if double(F(i).blockUntil) > it
                 tf = true;
             end
@@ -161,14 +160,15 @@ function tf = all_unsolved_permanent(C, cache)
     tf = false;
     unsolved = find(~C.cornerSolved);
     if isempty(unsolved), return; end
-    tol = 1e-12;
     F = cache.failures;
+    MP = getfield_default_s(cache.config, 'MP', struct());
+    mv = getfield_default_s(cache.config, 'modelVersion', "");
     for j = unsolved'
-        h1 = C.corners(j,1); h2 = C.corners(j,2);
+        h = corner_hash(C.corners(j,:), MP, mv);
         perm = false;
-        if isstruct(F) && ~isempty(F) && all(isfield(F,{'H0_1','H0_2','blockUntil'}))
+        if isstruct(F) && ~isempty(F) && all(isfield(F,{'hash','blockUntil'}))
             for i=1:numel(F)
-                if abs(double(F(i).H0_1)-h1)<tol && abs(double(F(i).H0_2)-h2)<tol
+                if string(F(i).hash) == string(h)
                     perm = isinf(double(F(i).blockUntil));
                     break
                 end
@@ -177,6 +177,23 @@ function tf = all_unsolved_permanent(C, cache)
         if ~perm, return; end
     end
     tf = true;
+end
+
+function h = corner_hash(corner, MP, modelVersion)
+% Compute the physics-aware hash for a corner point, matching the driver.
+    key = struct( ...
+        'model_version', string(modelVersion), ...
+        'H0_1', corner(1), 'H0_2', corner(2), ...
+        'A', getfield_default_s(MP,'A',NaN), ...
+        'V', getfield_default_s(MP,'V',NaN), ...
+        'KA', getfield_default_s(MP,'KA',NaN), ...
+        'KB', getfield_default_s(MP,'KB',NaN), ...
+        'KG', getfield_default_s(MP,'KG',NaN));
+    h = simpleDataHash(key, 'SHA-256');
+end
+
+function v = getfield_default_s(S, name, def)
+    if isstruct(S) && isfield(S, name), v = S.(name); else, v = def; end
 end
 
 % ---------------- catalog lookup ----------------

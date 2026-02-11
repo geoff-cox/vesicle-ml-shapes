@@ -49,6 +49,26 @@ function [task, cache] = processQuadtree(cache, T, MP)
                     % fall back to scheduling a blocked corner rather than exiting early.
                     deferredCount = deferredCount + 1;
                     if deferredCount >= queueCount
+                        % Check if all unsolved corners are permanently
+                        % blocked (blockUntil == Inf).  If so, mark them
+                        % solved with a failure label and let the cell
+                        % proceed to the uniform test instead of returning
+                        % a task that the driver will endlessly skip.
+                        allPerm = all_unsolved_permanent(C, cache);
+                        if allPerm
+                            for jj = find(~C.cornerSolved)'
+                                C.cornerSolved(jj) = true;
+                                C.cornerLabel(jj) = "failed";
+                                C.cornerEnergy(jj) = NaN;
+                                C.cornerPressure(jj) = NaN;
+                            end
+                            % Put modified cell back for uniform test on
+                            % next pass through the while loop.
+                            cache.QT.queue = [{C}, cache.QT.queue];
+                            deferredCount = 0;
+                            continue
+                        end
+
                         % Fallback: choose the first unsolved corner even if blocked, so that
                         % the driver can advance iter and eventually let cooldown expire.
                         k_fallback = find(~C.cornerSolved,1,'first');
@@ -132,6 +152,29 @@ function tf = isBlocked(F, it, h1, h2, tol)
             return
         end
     end
+end
+
+function tf = all_unsolved_permanent(C, cache)
+% True when every unsolved corner is permanently blocked (blockUntil==Inf).
+    tf = false;
+    unsolved = find(~C.cornerSolved);
+    if isempty(unsolved), return; end
+    tol = 1e-12;
+    F = cache.failures;
+    for j = unsolved'
+        h1 = C.corners(j,1); h2 = C.corners(j,2);
+        perm = false;
+        if isstruct(F) && ~isempty(F) && all(isfield(F,{'H0_1','H0_2','blockUntil'}))
+            for i=1:numel(F)
+                if abs(double(F(i).H0_1)-h1)<tol && abs(double(F(i).H0_2)-h2)<tol
+                    perm = isinf(double(F(i).blockUntil));
+                    break
+                end
+            end
+        end
+        if ~perm, return; end
+    end
+    tf = true;
 end
 
 % ---------------- catalog lookup ----------------

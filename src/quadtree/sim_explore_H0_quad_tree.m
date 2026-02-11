@@ -83,6 +83,9 @@ function sim_explore_H0_quad_tree(sim)
 
             if rec.count >= MAX_RETRIES
                 say('[skip] %s (permanent after %d failures: "%s")', hash, rec.count, scrub(rec.lastMsg));
+                % Mark permanently blocked so processQuadtree's isBlocked()
+                % will skip this corner instead of returning it again.
+                cache.failures(recIdx).blockUntil = Inf;
                 cache = rotate_quadtree_queue(cache);
                 if mod(iters, SAVE_EVERY)==0
                     catalog_save(simDir, T);

@@ -1,8 +1,9 @@
 function sim_explore_H0_quad_tree(sim)
 
     % --- project root and output dirs (allow override for tests) ---
-    here = fileparts(mfilename('fullpath'));
-    projRoot = fileparts(here);
+    here     = fileparts(mfilename('fullpath'));   % src/quadtree
+    srcRoot  = fileparts(here);                    % src
+    projRoot = fileparts(srcRoot);                 % repo root
 
     simDir = getfield_default(sim.SP, 'SimDir', fullfile(projRoot,'SimResults'));
     solDir = fullfile(simDir,'hashed_results');
@@ -66,9 +67,12 @@ function sim_explore_H0_quad_tree(sim)
             say('[skip] %s (exists)', hash);
             try S = load(fmat,'meta'); catch, S = struct('meta',struct()); end %#ok<CTCH>
             entry = struct('params', merge_params(task.params, sim.MP), 'meta', S.meta);
-            T = catalog_append(simDir, hash, entry);
+            T = catalog_append(T, hash, entry);
 
-            if mod(iters, SAVE_EVERY)==0, saveCache(simDir, cache); end
+            if mod(iters, SAVE_EVERY)==0
+                catalog_save(simDir, T);
+                saveCache(simDir, cache);
+            end
             continue
         end
 
@@ -80,14 +84,20 @@ function sim_explore_H0_quad_tree(sim)
             if rec.count >= MAX_RETRIES
                 say('[skip] %s (permanent after %d failures: "%s")', hash, rec.count, scrub(rec.lastMsg));
                 cache = rotate_quadtree_queue(cache);
-                if mod(iters, SAVE_EVERY)==0, saveCache(simDir, cache); end
+                if mod(iters, SAVE_EVERY)==0
+                    catalog_save(simDir, T);
+                    saveCache(simDir, cache);
+                end
                 continue
             end
 
             if iters < rec.blockUntil
                 say('[skip] %s (cooldown: wait %d iters, last="%s")', hash, rec.blockUntil - iters, scrub(rec.lastMsg));
                 cache = rotate_quadtree_queue(cache);
-                if mod(iters, SAVE_EVERY)==0, saveCache(simDir, cache); end
+                if mod(iters, SAVE_EVERY)==0
+                    catalog_save(simDir, T);
+                    saveCache(simDir, cache);
+                end
                 continue
             end
         end
@@ -131,7 +141,10 @@ function sim_explore_H0_quad_tree(sim)
             end
 
             cache = rotate_quadtree_queue(cache);
-            if mod(iters, SAVE_EVERY)==0, saveCache(simDir, cache); end
+            if mod(iters, SAVE_EVERY)==0
+                catalog_save(simDir, T);
+                saveCache(simDir, cache);
+            end
             continue
         end
 
@@ -141,13 +154,17 @@ function sim_explore_H0_quad_tree(sim)
         movefile(tmp, fmat, 'f');
 
         entry = struct('params', merge_params(task.params, sim.MP), 'meta', meta);
-        T = catalog_append(simDir, hash, entry);
+        T = catalog_append(T, hash, entry);
 
-        if mod(iters, SAVE_EVERY)==0, saveCache(simDir, cache); end
+        if mod(iters, SAVE_EVERY)==0
+            catalog_save(simDir, T);
+            saveCache(simDir, cache);
+        end
     end
 
+    catalog_save(simDir, T);
     saveCache(simDir, cache);
-    say('[driver] done | iterations=%d | catalogRows=%d', iters, height(catalog_load(simDir)));
+    say('[driver] done | iterations=%d | catalogRows=%d', iters, height(T));
 end
 
 % ---------------- helpers (unchanged where possible) ----------------
@@ -315,7 +332,7 @@ function warm = pickWarmStart(params, sim, simDir, T)
         if any(mask)
             ix = find(mask,1,'first');
             src = ""; if isfield(T.entry{ix}.meta,'source'), src = string(T.entry{ix}.meta.source); end
-            ishapesDir = fullfile(fileparts(simDir),'initial-shapes');
+            ishapesDir = fullfile(fileparts(simDir),'src','initial-shapes');
             f = src; if ~isempty(src) && exist(f,'file')~=2, f = fullfile(ishapesDir, src); end
             if exist(f,'file')==2
                 tmp = load(f);

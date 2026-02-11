@@ -395,9 +395,9 @@ end
 
 function initSol = initialGuessFromFile(params, H0)
 
-    here  = fileparts(mfilename('fullpath'));
-    root  = fileparts(fileparts(here));
-    ishapes = fullfile(root,'initial-shapes');
+    here    = fileparts(mfilename('fullpath'));   % src/solver
+    srcRoot = fileparts(here);                     % src
+    ishapes = fullfile(srcRoot,'initial-shapes');
 
     initSol = [];
 

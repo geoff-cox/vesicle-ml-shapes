@@ -1,17 +1,27 @@
 function T = catalog_append(simDir, hash, entry, ts)
 % CATALOG_APPEND  Append/update SimResults/catalog.mat (MAT-only, UTC timestamps)
-% Works in MATLAB versions without tzconvert.
+%
+% T = catalog_append(simDir, hash, entry)       — load, append, save
+% T = catalog_append(T,      hash, entry)       — in-memory only (no I/O)
+%
+% When the first argument is a table (returned from a previous call or
+% catalog_load), the function works purely in memory.  The caller is
+% responsible for calling catalog_save(simDir, T) when ready.
+%
+% When the first argument is a char/string directory path, the function
+% loads from disk, appends, and writes back — identical to the original
+% behaviour.
+
+    inMemory = istable(simDir);
 
     % --- normalize incoming timestamp to UTC ---
     if nargin < 4 || isempty(ts)
         ts = datetime('now','TimeZone','UTC','Format','yyyy-MM-dd HH:mm:ss');
     else
         if ~isdatetime(ts), ts = datetime(ts); end
-        % ensure UTC
         if isempty(ts.TimeZone)
             ts.TimeZone = 'UTC';
         elseif ~strcmpi(ts.TimeZone,'UTC')
-            % If tzconvert unavailable, just mark as UTC (no shift)
             try
                 ts = datetime(ts,'TimeZone','UTC');
             catch
@@ -22,7 +32,11 @@ function T = catalog_append(simDir, hash, entry, ts)
     end
 
     % --- load catalog (may be missing/empty) ---
-    T = catalog_load(simDir);
+    if inMemory
+        T = simDir;           % first arg is already a table
+    else
+        T = catalog_load(simDir);
+    end
 
     % --- ensure schema; when empty, make UTC-aware timestamp column ---
     if isempty(T) || ~any(T.Properties.VariableNames=="entry")
@@ -60,7 +74,10 @@ function T = catalog_append(simDir, hash, entry, ts)
         end
     end
 
-    catalog_save(simDir, T);
+    % --- persist to disk only when operating in file mode ---
+    if ~inMemory
+        catalog_save(simDir, T);
+    end
 end
 
 % ---------- helpers ----------

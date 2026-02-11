@@ -10,11 +10,11 @@ function script_sanity_checks(varargin)
     parse(p,varargin{:});
     doPhysicsSmoke = p.Results.doPhysicsSmoke;
 
-    projRoot = fileparts(mfilename('fullpath'));
+    here = fileparts(mfilename('fullpath'));     % src/scripts
+    srcRoot = fileparts(here);                    % src
 
     % Paths (minimal; avoid restoredefaultpath here)
-    addpath(genpath(fullfile(projRoot,'src')));
-    addpath(fullfile(projRoot,'bvp6c-solver'));
+    addpath(genpath(srcRoot));
 
     tmpRoot = fullfile(tempdir, "vesicle_sanity_" + string(java.util.UUID.randomUUID));
     simDir  = fullfile(tmpRoot, 'SimResults');

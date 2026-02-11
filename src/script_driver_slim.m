@@ -1,8 +1,15 @@
-%% Script Driver
-%% run_initial_sweep.m
+%% Script Driver — Quadtree Parameter-Space Exploration
+%
+% Entry point for vesicle shape simulations.
+% Bootstraps paths, loads seed shapes, runs the adaptive quadtree sweep,
+% then restores the MATLAB environment.
+%
+% Usage:
+%   >> cd src
+%   >> script_driver_slim
 
 warnState = bootstrap();
-sim = sim_config;
+sim = sim_config();
 sim_explore_H0_quad_tree(sim);
 cleanup(warnState);
 
@@ -39,35 +46,32 @@ function S = sim_config()
 
     % derived phase scales from A
     [MP.aS, MP.bS] = computePhaseScales(MP.A);
-    
+
     % pack it into a simulation struct
     S = struct('SP',SP,'TH',TH,'MP',MP);
 
 end
 
 %%
-% bootstrap.m
-% -------------------------------------------------------------
-% One-stop setup for the vesicle simulation project.
+% bootstrap  — one-stop setup for the vesicle simulation project.
 % Run this once per MATLAB session before launching the driver.
-% -------------------------------------------------------------
 
-function warnState = bootstrap
-    % Resolve project root from this file, not pwd
-    projRoot = fileparts(mfilename('fullpath'));
+function warnState = bootstrap()
+    % Resolve src/ root from this file's location
+    srcRoot = fileparts(mfilename('fullpath'));
 
     restoredefaultpath; rehash toolboxcache;
-    addpath(genpath(fullfile(projRoot,'src')));
-    addpath(fullfile(projRoot,'bvp6c-solver'));
-    addpath(fullfile(projRoot,'initial-shapes'));
+    addpath(genpath(srcRoot));
 
-    simDir = fullfile(projRoot,'SimResults');
+    % SimResults lives next to src/
+    projRoot = fileparts(srcRoot);
+    simDir   = fullfile(projRoot, 'SimResults');
     if ~exist(simDir,'dir'), mkdir(simDir); end
 
-    import_initial_shapes_into_catalog(fullfile(projRoot,'initial-shapes'), simDir);
+    ishapesDir = fullfile(srcRoot, 'initial-shapes');
+    import_initial_shapes_into_catalog(ishapesDir, simDir);
 
     disp('MATLAB environment initialized for Vesicle Simulation Project.');
-    ver
 
     warnState = warning('off','MATLAB:bvp6c:RelTolNotMet');
 end
@@ -76,10 +80,9 @@ function import_initial_shapes_into_catalog(ishapesDir, simDir)
     T = catalog_load(simDir);
     files = dir(fullfile(ishapesDir,'SIM_Node_*.mat'));
 
-    for k=1:numel(files)
-        f = fullfile(files(k).folder, files(k).name);
-
-        tok = regexp(files(k).name,'SIM_Node_(\d+)_(\d+)_(-?\d+)_(-?\d+)_(-?\d+)_','tokens','once');
+    for k = 1:numel(files)
+        tok = regexp(files(k).name, ...
+            'SIM_Node_(\d+)_(\d+)_(-?\d+)_(-?\d+)_(-?\d+)_','tokens','once');
         if isempty(tok), continue; end
 
         A  = str2double(tok{1})/100;
@@ -89,11 +92,9 @@ function import_initial_shapes_into_catalog(ishapesDir, simDir)
         KB = str2double(tok{5});
 
         params = struct('A',A,'V',V,'KG',KG,'KA',KA,'KB',KB);
+        entry  = struct('params',params, ...
+                        'meta',struct('type',"seed",'source',string(files(k).name)));
 
-        entry = struct('params',params, ...
-                       'meta',struct('type',"seed",'source',string(files(k).name)));
-
-        % Unique per seed file (prevents accidental merging)
         seedKey = struct('model_version',"seed-v1", ...
                          'A',A,'V',V,'KG',KG,'KA',KA,'KB',KB, ...
                          'source', string(files(k).name));
@@ -103,17 +104,10 @@ function import_initial_shapes_into_catalog(ishapesDir, simDir)
     end
 end
 
-% cleanup.m
-% -------------------------------------------------------------
-% removes added paths
-% -------------------------------------------------------------
+% cleanup — restore MATLAB path after a run.
 
 function cleanup(warnState)
-    
     warning(warnState);
-
-    % Remove your source folders
-    rmpath(genpath(fullfile(pwd,'src')));
-    rmpath(fullfile(pwd,'bvp6c-solver'));
-    rmpath(fullfile(pwd,'initial-shapes'));
+    srcRoot = fileparts(mfilename('fullpath'));
+    rmpath(genpath(srcRoot));
 end

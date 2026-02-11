@@ -1,15 +1,24 @@
-run('bootstrap.m');
+% check_interface_curvature.m
+% Diagnostic: compute mean-curvature jump at the interface from a solution.
+%
+% Usage: run from the src/ directory (or add src/ to path first).
+
+here = fileparts(mfilename('fullpath'));
+srcRoot = fileparts(here);
+addpath(genpath(srcRoot));
 
 % load a recent accepted solution
-resDir = fullfile('SimResults'); d = dir(fullfile(resDir,'**','results','*.mat'));
-S = load(fullfile(d(end).folder,d(end).name),'sol');
+projRoot = fileparts(srcRoot);
+resDir   = fullfile(projRoot, 'SimResults', 'hashed_results');
+d = dir(fullfile(resDir, '*.mat'));
+assert(~isempty(d), 'No hashed results found yet.');
 
-% pull out neck indices (last node of alpha equals first of beta in your split setup)
-psiA = S.sol.y(3,:);  rA = S.sol.y(4,:);  HA = S.sol.y(2,:);
-psiB = S.sol.y(12,:); rB = S.sol.y(13,:); HB = S.sol.y(11,:);
+S = load(fullfile(d(end).folder, d(end).name), 'result');
+sol = S.result.sol;
+
+% pull out neck indices
+HA = sol.y(2,:);   HB = sol.y(11,:);
 
 % mean curvature 2H = psi' + sin(psi)/r (here, H stored directly in y(2,:), y(11,:))
 H_jump = 2*HB(end) - 2*HA(end);
 fprintf('Interface mean-curvature jump (2H_B - 2H_A) ~ %.4e\n', H_jump);
-
-run('cleanup.m');

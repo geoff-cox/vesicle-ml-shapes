@@ -35,7 +35,8 @@ function [task, cache] = processQuadtree(cache, T, MP)
         C = cache.QT.queue{1};
         cache.QT.queue(1) = [];
 
-        [C, anyUnknown] = refresh_corners_from_catalog(C, T, MP, tol);
+        bt = getfield_default_s(cache.config, 'branchTag', "");
+        [C, anyUnknown] = refresh_corners_from_catalog(C, T, MP, tol, bt);
 
         if anyUnknown
             k = find(~C.cornerSolved,1,'first');
@@ -130,9 +131,10 @@ function k = pick_unblocked_corner(C, cache)
     it = cache.iter;
     MP = getfield_default_s(cache.config, 'MP', struct());
     mv = getfield_default_s(cache.config, 'modelVersion', "");
+    bt = getfield_default_s(cache.config, 'branchTag', "");
     for j = 1:size(C.corners,1)
         if C.cornerSolved(j), continue; end
-        h = corner_hash(C.corners(j,:), MP, mv);
+        h = corner_hash(C.corners(j,:), MP, mv, bt);
         if ~isBlocked(cache.failures, it, h)
             k = j; return
         end
@@ -163,8 +165,9 @@ function tf = all_unsolved_permanent(C, cache)
     F = cache.failures;
     MP = getfield_default_s(cache.config, 'MP', struct());
     mv = getfield_default_s(cache.config, 'modelVersion', "");
+    bt = getfield_default_s(cache.config, 'branchTag', "");
     for j = unsolved'
-        h = corner_hash(C.corners(j,:), MP, mv);
+        h = corner_hash(C.corners(j,:), MP, mv, bt);
         perm = false;
         if isstruct(F) && ~isempty(F) && all(isfield(F,{'hash','blockUntil'}))
             for i=1:numel(F)
@@ -179,8 +182,10 @@ function tf = all_unsolved_permanent(C, cache)
     tf = true;
 end
 
-function h = corner_hash(corner, MP, modelVersion)
+function h = corner_hash(corner, MP, modelVersion, branchTag)
 % Compute the physics-aware hash for a corner point, matching the driver.
+% Includes branch_tag when non-empty (for hysteresis / multi-solution).
+    if nargin < 4, branchTag = ""; end
     key = struct( ...
         'model_version', string(modelVersion), ...
         'H0_1', corner(1), 'H0_2', corner(2), ...
@@ -189,6 +194,9 @@ function h = corner_hash(corner, MP, modelVersion)
         'KA', getfield_default_s(MP,'KA',NaN), ...
         'KB', getfield_default_s(MP,'KB',NaN), ...
         'KG', getfield_default_s(MP,'KG',NaN));
+    if strlength(string(branchTag)) > 0
+        key.branch_tag = string(branchTag);
+    end
     h = simpleDataHash(key, 'SHA-256');
 end
 
@@ -197,11 +205,12 @@ function v = getfield_default_s(S, name, def)
 end
 
 % ---------------- catalog lookup ----------------
-function [C, anyUnknown] = refresh_corners_from_catalog(C, T, MP, tol)
+function [C, anyUnknown] = refresh_corners_from_catalog(C, T, MP, tol, branchTag)
+    if nargin < 5, branchTag = ""; end
     anyUnknown = false;
     for i=1:4
         H1 = C.corners(i,1); H2 = C.corners(i,2);
-        [solved,label,E,P] = lookup_in_catalog(T,H1,H2,MP,tol);
+        [solved,label,E,P] = lookup_in_catalog(T,H1,H2,MP,tol,branchTag);
         C.cornerSolved(i)=solved;
         C.cornerLabel(i)=string(label);
         C.cornerEnergy(i)=E;
@@ -210,7 +219,8 @@ function [C, anyUnknown] = refresh_corners_from_catalog(C, T, MP, tol)
     end
 end
 
-function [solved,label,E,P] = lookup_in_catalog(T,H1,H2,MP,tol)
+function [solved,label,E,P] = lookup_in_catalog(T,H1,H2,MP,tol,branchTag)
+    if nargin < 6, branchTag = ""; end
     solved=false; label=""; E=NaN; P=NaN;
     if isempty(T) || ~any(T.Properties.VariableNames=="entry"), return; end
 
@@ -242,6 +252,12 @@ function [solved,label,E,P] = lookup_in_catalog(T,H1,H2,MP,tol)
         & abs(KBv- MP.KB) <= tolPhys ...
         & abs(KGv- MP.KG) <= tolPhys;
 
+    % branch-aware filtering: match branch_tag when non-empty
+    if strlength(string(branchTag)) > 0 && any(hit)
+        btags = cellfun(@(e) string(g_str(e,'meta','branch_tag')), entries);
+        hit = hit & (btags == string(branchTag));
+    end
+
     if any(hit)
         ix = find(hit,1,'last');     % newest
         m  = entries{ix}.meta;
@@ -257,6 +273,14 @@ function v = g(e,a,b)
         v = double(e.(a).(b));
     else
         v = NaN;
+    end
+end
+
+function v = g_str(e,a,b)
+    if isstruct(e) && isfield(e,a) && isstruct(e.(a)) && isfield(e.(a),b)
+        v = string(e.(a).(b));
+    else
+        v = "";
     end
 end
 

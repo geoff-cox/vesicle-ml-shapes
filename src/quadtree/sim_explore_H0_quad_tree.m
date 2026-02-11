@@ -35,6 +35,9 @@ function sim_explore_H0_quad_tree(sim)
     SAVE_EVERY    = getfield_default(sim.SP, 'CacheSaveEvery', 50);  % reduce I/O
     USE_WARMSTART = getfield_default(sim.SP, 'UseWarmStart', true);
 
+    % ---- hysteresis: branch tag for multi-solution support ----
+    BRANCH_TAG    = string(getfield_default(sim.SP, 'BranchTag', ""));
+
     solverFcn = getfield_default(sim.SP, 'SolverFcn', @solveAtParams);
 
     say('[driver] start | version=%s | maxIters=%g', string(sim.SP.ModelVersion), sim.SP.MaxIters);
@@ -42,6 +45,7 @@ function sim_explore_H0_quad_tree(sim)
     % Store physics context for hash-aware failure matching in processQuadtree
     cache.config.modelVersion = string(sim.SP.ModelVersion);
     cache.config.MP = sim.MP;
+    cache.config.branchTag = BRANCH_TAG;
 
     iters = 0;
     while iters < sim.SP.MaxIters
@@ -62,6 +66,11 @@ function sim_explore_H0_quad_tree(sim)
             'H0_1', H0(1), 'H0_2', H0(2), ...
             'A', sim.MP.A, 'V', sim.MP.V, ...
             'KA', sim.MP.KA, 'KB', sim.MP.KB, 'KG', sim.MP.KG);
+
+        % hysteresis: include branch_tag when non-empty
+        if strlength(BRANCH_TAG) > 0
+            key.branch_tag = BRANCH_TAG;
+        end
 
         hash = simpleDataHash(key, 'SHA-256');  % now safe with patched simpleDataHash
         fmat = fullfile(solDir, hash + ".mat");
@@ -121,6 +130,9 @@ function sim_explore_H0_quad_tree(sim)
             meta.hash = hash;
             if ~isfield(meta,'version') || strlength(string(meta.version))==0
                 meta.version = string(sim.SP.ModelVersion);
+            end
+            if strlength(BRANCH_TAG) > 0
+                meta.branch_tag = BRANCH_TAG;
             end
 
             if hasRec
@@ -287,9 +299,11 @@ function warm = pickWarmStart(params, sim, simDir, T)
     if nargin < 4 || isempty(T), T = catalog_load(simDir); end
     MP = sim.MP; Htgt = [params.H0_1 params.H0_2];
 
+    branchTag = string(getfield_default(sim.SP, 'BranchTag', ""));
+
     tol = 1e-12;
 
-    % 1) nearest solved neighbor with matching physics
+    % 1) nearest solved neighbor with matching physics (and branch)
     if ~isempty(T) && any(T.Properties.VariableNames=="entry")
         H1 = cellfun(@(e) fget(e,'params','H0_1'), T.entry);
         H2 = cellfun(@(e) fget(e,'params','H0_2'), T.entry);
@@ -306,6 +320,16 @@ function warm = pickWarmStart(params, sim, simDir, T)
             & abs(Av-MP.A)<tol & abs(Vv-MP.V)<tol ...
             & abs(KAv-MP.KA)<tol & abs(KBv-MP.KB)<tol & abs(KGv-MP.KG)<tol ...
             & isfinite(H1) & isfinite(H2);
+
+        % branch-aware filtering: prefer same branch tag
+        if strlength(branchTag) > 0 && any(mask)
+            btags = cellfun(@(e) string(fget_str(e,'meta','branch_tag')), T.entry);
+            branchMask = mask & (btags == branchTag);
+            if any(branchMask)
+                mask = branchMask;
+            end
+            % if no same-branch neighbor found, fall through to any-branch
+        end
 
         if any(mask)
             d2 = (H1(mask)-Htgt(1)).^2 + (H2(mask)-Htgt(2)).^2;
@@ -358,6 +382,14 @@ function warm = pickWarmStart(params, sim, simDir, T)
             v = double(e.(a).(b));
         else
             v = NaN;
+        end
+    end
+
+    function v = fget_str(e, a, b)
+        if isstruct(e) && isfield(e,a) && isstruct(e.(a)) && isfield(e.(a),b)
+            v = string(e.(a).(b));
+        else
+            v = "";
         end
     end
 

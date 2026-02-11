@@ -211,10 +211,12 @@ function bt = normalize_branch_tag(bt)
         bt = ""; return
     end
     bt = string(bt);
-    if isempty(bt)
-        bt = ""; return
+    if ~isscalar(bt)
+        bt = bt(1);
     end
-    bt = bt(1);
+    if ismissing(bt) || strlength(bt) == 0
+        bt = "";
+    end
 end
 
 % ---------------- catalog lookup ----------------

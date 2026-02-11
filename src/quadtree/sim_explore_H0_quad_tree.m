@@ -62,7 +62,12 @@ function sim_explore_H0_quad_tree(sim)
     % Each branch explores the (H0_1, H0_2) plane independently; reusing a
     % stale QT queue/cells from a different branch would skip regions.
     prevBranch = getfield_default(cache.config, 'branchTag', "");
-    if isempty(prevBranch), prevBranch = ""; else, prevBranch = string(prevBranch); prevBranch = prevBranch(1); end
+    if isempty(prevBranch)
+        prevBranch = "";
+    else
+        prevBranch = string(prevBranch);
+        prevBranch = prevBranch(1);
+    end
     if prevBranch ~= BRANCH_TAG
         say('[driver] branch changed (%s → %s); resetting quadtree state.', prevBranch, BRANCH_TAG);
         if isfield(cache,'QT'), cache = rmfield(cache,'QT'); end

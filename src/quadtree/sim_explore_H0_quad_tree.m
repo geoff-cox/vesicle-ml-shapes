@@ -1,8 +1,9 @@
 function sim_explore_H0_quad_tree(sim)
 
     % --- project root and output dirs (allow override for tests) ---
-    here = fileparts(mfilename('fullpath'));
-    projRoot = fileparts(here);
+    here     = fileparts(mfilename('fullpath'));   % src/quadtree
+    srcRoot  = fileparts(here);                    % src
+    projRoot = fileparts(srcRoot);                 % repo root
 
     simDir = getfield_default(sim.SP, 'SimDir', fullfile(projRoot,'SimResults'));
     solDir = fullfile(simDir,'hashed_results');
@@ -315,7 +316,7 @@ function warm = pickWarmStart(params, sim, simDir, T)
         if any(mask)
             ix = find(mask,1,'first');
             src = ""; if isfield(T.entry{ix}.meta,'source'), src = string(T.entry{ix}.meta.source); end
-            ishapesDir = fullfile(fileparts(simDir),'initial-shapes');
+            ishapesDir = fullfile(fileparts(simDir),'src','initial-shapes');
             f = src; if ~isempty(src) && exist(f,'file')~=2, f = fullfile(ishapesDir, src); end
             if exist(f,'file')==2
                 tmp = load(f);

@@ -86,13 +86,10 @@ function ascii_profile(sol)
 end
 
 function warnState = bootstrap()
-    root = pwd;
+    here = fileparts(mfilename('fullpath'));   % src/scripts
+    srcRoot = fileparts(here);                 % src
     restoredefaultpath;
-    addpath(fullfile(root,'src'));
-    addpath(fullfile(root,'src','utils'));
-    addpath(fullfile(root,'src','quadtree'));
-    addpath(fullfile(root,'src','model'));
-    addpath(fullfile(root,'src','bvp6c-solver'));
+    addpath(genpath(srcRoot));
 
     warning('off','MATLAB:singularMatrix');
     warning('off','MATLAB:nearlySingularMatrix');

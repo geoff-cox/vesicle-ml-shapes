@@ -58,20 +58,20 @@ function [task, cache] = processQuadtree(cache, T, MP)
             cache.QT.queue = [{C}, cache.QT.queue];
             task = struct('params',params);
             return
-        end
-
-        [uniform,mixedEdges] = uniformTest(C, cache.config.eTol, cache.config.pTol, cache.config.shapeTau);
-        C.isUniform = uniform;
-        C.mixedEdges = mixedEdges;
-
-        if uniform || C.depth >= cache.config.maxDepth || numel(cache.QT.cells) >= cache.config.maxCells
-            cache.QT.cells = [cache.QT.cells; C];
         else
-            [C1,C2,C3,C4] = subdivideCell(C);
-            cache.QT.queue(end+1:end+4) = {C1,C2,C3,C4};
-        end
+            [uniform,mixedEdges] = uniformTest(C, cache.config.eTol, cache.config.pTol, cache.config.shapeTau);
+            C.isUniform = uniform;
+            C.mixedEdges = mixedEdges;
 
-        deferredCount = 0;
+            if uniform || C.depth >= cache.config.maxDepth || numel(cache.QT.cells) >= cache.config.maxCells
+                cache.QT.cells = [cache.QT.cells; C];
+            else
+                [C1,C2,C3,C4] = subdivideCell(C);
+                cache.QT.queue(end+1:end+4) = {C1,C2,C3,C4};
+            end
+
+            deferredCount = 0;
+        end
     end
 end
 

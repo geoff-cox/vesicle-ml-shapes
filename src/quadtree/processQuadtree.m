@@ -44,13 +44,29 @@ function [task, cache] = processQuadtree(cache, T, MP)
             if isfield(cache,'failures') && isfield(cache,'iter') && ~isempty(cache.failures)
                 k = pick_unblocked_corner(C, cache);
                 if isempty(k)
-                    % Defer this cell; move on to other queued cells.
-                    cache.QT.queue{end+1} = C;
+                    % All candidate corners in this cell are currently cooldown-blocked.
+                    % Defer this cell for now, but if *every* cell in the queue is deferred,
+                    % fall back to scheduling a blocked corner rather than exiting early.
                     deferredCount = deferredCount + 1;
                     if deferredCount >= queueCount
-                        break
+                        % Fallback: choose the first unsolved corner even if blocked, so that
+                        % the driver can advance iter and eventually let cooldown expire.
+                        k_fallback = find(~C.cornerSolved,1,'first');
+                        if isempty(k_fallback)
+                            % Defensive: no unsolved corners found; exit loop as before.
+                            break
+                        end
+                        params = struct('H0_1',C.corners(k_fallback,1), ...
+                                        'H0_2',C.corners(k_fallback,2));
+                        % Re-queue this cell at the front so it will be revisited.
+                        cache.QT.queue = [{C}, cache.QT.queue];
+                        task = struct('params',params);
+                        return
+                    else
+                        % Defer this cell; move on to other queued cells.
+                        cache.QT.queue{end+1} = C;
+                        continue
                     end
-                    continue
                 end
             end
 

@@ -72,7 +72,6 @@ function [task, cache] = processQuadtree(cache, T, MP)
         end
 
         deferredCount = 0;
-        queueCount = 0;
     end
 end
 

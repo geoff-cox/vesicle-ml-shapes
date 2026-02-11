@@ -27,6 +27,7 @@ function [task, cache] = processQuadtree(cache, T, MP)
 
     deferredCount = 0;
     while ~isempty(cache.QT.queue)
+        queueCount = numel(cache.QT.queue);
 
         C = cache.QT.queue{1};
         cache.QT.queue(1) = [];
@@ -43,7 +44,7 @@ function [task, cache] = processQuadtree(cache, T, MP)
                     % Defer this cell; move on to other queued cells.
                     cache.QT.queue{end+1} = C;
                     deferredCount = deferredCount + 1;
-                    if deferredCount >= numel(cache.QT.queue)
+                    if deferredCount >= queueCount
                         break
                     end
                     continue

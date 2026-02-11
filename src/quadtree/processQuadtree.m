@@ -62,11 +62,13 @@ function [task, cache] = processQuadtree(cache, T, MP)
                                 C.cornerEnergy(jj) = NaN;
                                 C.cornerPressure(jj) = NaN;
                             end
-                            % Put modified cell back for uniform test on
-                            % next pass through the while loop.
-                            cache.QT.queue = [{C}, cache.QT.queue];
+                            % All unsolved corners are permanently blocked and have
+                            % just been marked as solved with label "failed". Proceed
+                            % to the uniform-test / refinement logic in this same
+                            % iteration (avoid re-calling refresh_corners_from_catalog
+                            % on this cell, which would reset these labels).
                             deferredCount = 0;
-                            continue
+                            anyUnknown = false;
                         end
 
                         % Fallback: choose the first unsolved corner even if blocked, so that

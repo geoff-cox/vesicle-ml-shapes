@@ -42,10 +42,10 @@ function [task, cache] = processQuadtree(cache, T, MP)
                 k = pick_unblocked_corner(C, cache);
                 if isempty(k)
                     % Defer this cell; move on to other queued cells.
-                    if deferredCount == 0
-                        queueCount = numel(cache.QT.queue) + 1;
-                    end
                     cache.QT.queue{end+1} = C;
+                    if deferredCount == 0
+                        queueCount = numel(cache.QT.queue);
+                    end
                     deferredCount = deferredCount + 1;
                     if deferredCount >= queueCount
                         break

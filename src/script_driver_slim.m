@@ -7,6 +7,7 @@
 % Usage:
 %   >> cd src
 %   >> script_driver_slim
+%
 
 warnState = bootstrap();
 sim = sim_config();
@@ -46,6 +47,14 @@ function S = sim_config()
 
     % derived phase scales from A
     [MP.aS, MP.bS] = computePhaseScales(MP.A);
+
+    % ---- apply default overrides ----
+    % SP.H0Bounds = [-1 1; -1 1];     % [H0_1min H0_1max; H0_2min H0_2max]
+    % SP.maxDepth = 7;
+    % SP.maxCells = 4000;
+    % SP.eTol     = 5e-3;
+    % SP.pTol     = 5e-3;
+    % SP.shapeTau = 0.08;
 
     % pack it into a simulation struct
     S = struct('SP',SP,'TH',TH,'MP',MP);

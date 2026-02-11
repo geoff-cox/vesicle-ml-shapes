@@ -28,6 +28,9 @@ function [task, cache] = processQuadtree(cache, T, MP)
     deferredCount = 0;
     queueCount = 0;
     while ~isempty(cache.QT.queue)
+        if deferredCount == 0
+            queueCount = numel(cache.QT.queue);
+        end
 
         C = cache.QT.queue{1};
         cache.QT.queue(1) = [];
@@ -43,9 +46,6 @@ function [task, cache] = processQuadtree(cache, T, MP)
                 if isempty(k)
                     % Defer this cell; move on to other queued cells.
                     cache.QT.queue{end+1} = C;
-                    if deferredCount == 0
-                        queueCount = numel(cache.QT.queue);
-                    end
                     deferredCount = deferredCount + 1;
                     if deferredCount >= queueCount
                         break
@@ -60,8 +60,6 @@ function [task, cache] = processQuadtree(cache, T, MP)
             return
         end
 
-        deferredCount = 0;
-        queueCount = 0;
         [uniform,mixedEdges] = uniformTest(C, cache.config.eTol, cache.config.pTol, cache.config.shapeTau);
         C.isUniform = uniform;
         C.mixedEdges = mixedEdges;
@@ -72,6 +70,9 @@ function [task, cache] = processQuadtree(cache, T, MP)
             [C1,C2,C3,C4] = subdivideCell(C);
             cache.QT.queue(end+1:end+4) = {C1,C2,C3,C4};
         end
+
+        deferredCount = 0;
+        queueCount = 0;
     end
 end
 

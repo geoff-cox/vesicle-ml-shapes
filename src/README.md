@@ -249,6 +249,20 @@ MP.KB = 1.0;                % bending modulus, β-phase
 MP.KG = 0.0;                % Gaussian bending modulus
 ```
 
+### Hysteresis / Multi-Solution Mode
+
+To explore multiple solution branches at the same `(H₀⁽¹⁾, H₀⁽²⁾)`, set
+`SP.BranchTag` to a non-empty string before launching the driver:
+
+```matlab
+sim = sim_config();
+sim.SP.BranchTag = "upper";    % distinct branch tag
+sim_explore_H0_quad_tree(sim);
+```
+
+Each branch tag produces a distinct hash, so multiple solutions coexist in the
+catalog.  See `HYSTERESIS_PLAN.md` in the repository root for the full design.
+
 ### Sanity Checks
 
 ```matlab

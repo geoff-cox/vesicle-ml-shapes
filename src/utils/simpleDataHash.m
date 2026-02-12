@@ -9,7 +9,15 @@ function hex = simpleDataHash(params, arg2, arg3)
     %
     % Rules:
     %   - Hash includes: model_version, H0_1, H0_2, A, V, KA, KB, KG
+    %   - Optionally includes: branch_tag (for hysteresis / multi-solution support)
     %   - Does NOT include: delta, opts, timestamps, etc.
+    %
+    % Hysteresis support:
+    %   When params.branch_tag is present and non-empty, it is included in the
+    %   hash key.  This allows multiple solutions at the same (H0_1, H0_2) by
+    %   assigning different branch tags (e.g., "upper", "lower", "path-A").
+    %   When branch_tag is absent or empty, the hash is identical to the
+    %   original (backward-compatible).
     %
     % If model_version is not provided, we try:
     %   params.model_version, params.version, else default "BVP-v3.1".
@@ -51,6 +59,12 @@ function hex = simpleDataHash(params, arg2, arg3)
     key.KA   = defaultArg(params,'KA',  NaN);
     key.KB   = defaultArg(params,'KB',  NaN);
     key.KG   = defaultArg(params,'KG',  NaN);
+
+    % ---- hysteresis: include branch_tag when non-empty ----
+    btag = defaultArg(params,'branch_tag',"");
+    if strlength(string(btag)) > 0
+        key.branch_tag = string(btag);
+    end
 
     % ---- stable serialization & hash ----
     hex = simpleDataHash_internal(key, char(method));

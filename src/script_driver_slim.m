@@ -24,6 +24,14 @@ function S = sim_config()
     SP.saveHomotopy = true;
     SP.CoarsenOnStall = true;
 
+    % ---- hysteresis / multi-solution ----
+    % Set SP.BranchTag to a non-empty string (e.g., "upper", "lower",
+    % "path-A") to explore an independent solution branch at every
+    % (H0_1, H0_2).  Each branch tag produces a distinct hash, so
+    % multiple solutions can coexist in the catalog for the same
+    % physics parameters.  Leave empty (default) for single-branch mode.
+    % SP.BranchTag = "";
+
     % ---- thresholds (gates) ----
     TH.BCmax     = 1e-6;
     TH.DEmaxHard = 2e-1;

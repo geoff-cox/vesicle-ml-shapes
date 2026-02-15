@@ -2,13 +2,13 @@ clc; clear;
 %% --- solver knobs for the re-solves ---
 TH = struct();
 TH.delta = 0.02;              % use your usual delta (can sweep this too)
-% TH.opts  = bvpset('RelTol',1e-6,'AbsTol',1e-8,'NMax',1500);
-TH.opts  = bvpset('RelTol',1e-6,'NMax',1000);
+TH.opts  = bvpset('RelTol',1e-6,'AbsTol',1e-8,'NMax',1500);
+% TH.opts  = bvpset('RelTol',1e-6,'NMax',1000);
 
 targetH0   = [0, 0];
 
 init_sol = load("C:\Users\mediaPC\Documents\MATLAB\research-sims\vesicle-ml-shapes\src\initial-shapes\SIM_Node_50_72_0_1_1_+00_+00.mat");
-sol = init_sol.Version(1).Solution
+sol = init_sol.Version(1).Solution;
 guess = bvpinit(sol.x, sol.y, sol.parameters);
 
 P.H0_1 = 0;

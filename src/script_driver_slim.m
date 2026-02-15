@@ -30,7 +30,7 @@ function S = sim_config()
     % (H0_1, H0_2).  Each branch tag produces a distinct hash, so
     % multiple solutions can coexist in the catalog for the same
     % physics parameters.  Leave empty (default) for single-branch mode.
-    % SP.BranchTag = "";
+    SP.BranchTag = "path-A";
 
     % ---- thresholds (gates) ----
     TH.BCmax     = 1e-6;
@@ -43,7 +43,7 @@ function S = sim_config()
         'RelTol',1e-6, ...
         'AbsTol',1e-8, ...
         'NMax',1500);
-    TH.delta_list = [0.01, 0.015, 0.02, 0.008, 0.005];
+    TH.delta_list = [0.02, 0.015, 0.01, 0.008, 0.005];
     TH.minH0Step = 0.01;
 
     % ---- physical parameters (global for this run) ----
@@ -57,7 +57,7 @@ function S = sim_config()
     [MP.aS, MP.bS] = computePhaseScales(MP.A);
 
     % ---- apply default overrides ----
-    % SP.H0Bounds = [-1 1; -1 1];     % [H0_1min H0_1max; H0_2min H0_2max]
+    SP.H0Bounds = [-3 3; -3 3];     % [H0_1min H0_1max; H0_2min H0_2max]
     % SP.maxDepth = 7;
     % SP.maxCells = 4000;
     % SP.eTol     = 5e-3;

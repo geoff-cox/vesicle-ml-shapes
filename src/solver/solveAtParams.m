@@ -142,7 +142,10 @@ function [result, meta] = solveAtParams(params, sim, warm)
                     catch ME
                         prev = maxSeg;
                         maxSeg = max(maxSeg/2, minSeg);
-                        say('  step fail: %s | %.4g → %.4g', ME.message, prev, maxSeg);
+                        if contains(ME.message, "singular Jacobian")
+                            errMsg = "Singular Jacobian";
+                        end
+                        say('  step fail: %s | rung = %i, trying delta = %5.4g,  path: (%.4g,%.4g) → (%.4g,%.4g) → (%.4g,%.4g)', errMsg, rung, deltaNow, Hprev, next, Htarget);
 
                         if maxSeg <= minSeg + eps
                             curSol = [];
@@ -161,7 +164,13 @@ function [result, meta] = solveAtParams(params, sim, warm)
 					if (BCmax <= TH.BCmax) && (DEmax <= TH.DEmaxHard) && (rmin >= TH.rMin) && (rNeck >= rNeckMin)
 						sol = curSol; accepted = true;
 						break
-					else
+                    else
+                        reason = "";
+                        if BCmax <= TH.BCmax, reason = reason + "~BCmax~"; end
+                        if DEmax <= TH.DEmaxHard, reason = reason + "~DEmax~"; end
+                        if rmin >= TH.rMin, reason = reason + "~rmin~"; end
+                        if rNeck >= rNeckMin, reason = reason + "~rNeck~"; end
+                        say('  gate fail: %s | rung = %i, trying delta = %5.4g,  path: (%.4g,%.4g) → (%.4g,%.4g) → (%.4g,%.4g)', reason, rung, deltaNow, Hprev, next, Htarget);
 						initSol = curSol; % warm next attempt
 					end
                 end
@@ -521,15 +530,13 @@ function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
         PBk - PAk
         rBk - rAk
         zBk - zAk
-        (VAk - VBk) - Vf;
-        (QBk - QAk) - sin(PAk)/rAk;
-        kB*(2*HBk - H0(2)) ...
-            - kA*(2*HAk - H0(1)) ...
-            + kG*(sin(PAk)/rAk);
-        kA*(2*HAk - H0(1))*(HAk - sin(PAk)/rAk + H0(1)/2) ...
-        - kB*(2*HBk - H0(2))*(HBk - sin(PBk)/rBk + H0(2)/2) ...
-        - (cos(PAk)/rAk) + LBk - LAk
-    ];
+        (VAk - VBk) - Vf
+        (QBk - QAk) - sin(PAk)/rAk
+        kB*(2*HBk - H0(2)) - kA*(2*HAk - H0(1)) + kG*(sin(PAk)/rAk)
+        kA*(2*HAk - H0(1))*(HAk - sin(PAk)/rAk + 0.5*H0(1)) ...
+            - kB*(2*HBk - H0(2))*(HBk - sin(PBk)/rBk + 0.5*H0(2)) ...
+            - (cos(PAk)/rAk) + LBk - LAk
+        ];
 
     res = [res_south; res_north; res_neck];
 end
@@ -575,8 +582,11 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
     ];
 
     RHS = @(Q, H, P, r, z, L, s, V, B, S, k, H0) [ ...
-        (-Q*cos(P)/r - k*(2*H - H0)*(H*H0 + 2*(H - sin(P)/r)^2) + 2*H*L + lam)*sin(S)/r;
-        Q/(2*k)*sin(S)/r;
+        (-Q*cos(P)/r ...
+            - k*(2*H - H0)*(H*H0 + 2*(H - sin(P)/r)^2) ...
+            + 2*H*L + lam ...
+        )*sin(S)/r;
+        0.5*Q/k*sin(S)/r;
         (2*H - sin(P)/r)*sin(S)/r;
         cos(P)*sin(S)/r;
         sin(P)*sin(S)/r;

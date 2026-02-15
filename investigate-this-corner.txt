@@ -1,0 +1,19 @@
+What corner was accepted here? (-2.906,0)? (-2.5,0)? both?
+
+=== solveAtParams: H0=[-2.90625,+0] ===
+Warm-start from prior solve.
+  ↺ axis-cross: reseed at [0,0] and restart continuation.
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta =  0.02,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta =  0.02,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta = 0.015,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta = 0.015,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta =  0.01,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta =  0.01,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta = 0.008,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta = 0.008,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta = 0.005,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 1, trying delta = 0.005,  path: (0,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~rmin~~rNeck~ | rung = 2, trying delta =  0.02,  path: (-2.5,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 2, trying delta =  0.02,  path: (-2.5,0) → (-2.906,0) → (-2.906,0)
+  gate fail: ~DEmax~~rmin~~rNeck~ | rung = 2, trying delta = 0.015,  path: (-2.5,0) → (-2.906,0) → (-2.906,0)
+=== accepted: mesh=330 | BC=2.50e-07 | DE=1.66e-02 | rMinAway=2.75e-02 | rNeck=5.41e-01 ===

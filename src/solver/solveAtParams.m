@@ -120,8 +120,8 @@ function [result, meta] = solveAtParams(params, sim, warm)
                     usedPar.H0    = next;
                     usedPar.delta = deltaNow;
 
-                    odefun = @(s_,y_,lam_) BendV_Lag_EIGp_DE_impl(s_,y_,lam_,usedPar);
-                    bcfun  = @(ya,yb,lam_) BendV_Lag_EIGp_BC_impl(ya,yb,lam_,usedPar);
+                    odefun = @(s_,y_,P_) BendV_Lag_EIGp_DE_impl(s_,y_,P_,usedPar);
+                    bcfun  = @(ya,yb,P_) BendV_Lag_EIGp_BC_impl(ya,yb,P_,usedPar);
 
                     try
                         curSol = bvp6c(odefun, bcfun, curSol, optsNow);
@@ -188,8 +188,8 @@ function [result, meta] = solveAtParams(params, sim, warm)
 
     [label, E_total, P_osm] = labelFromSolution(sol);
 
-    bcfunT  = @(ya,yb,lam_) BendV_Lag_EIGp_BC_impl(ya,yb,lam_,usedPar);
-    odefunT = @(s_,y_,lam_) BendV_Lag_EIGp_DE_impl(s_,y_,lam_,usedPar);
+    bcfunT  = @(ya,yb,P_) BendV_Lag_EIGp_BC_impl(ya,yb,P_,usedPar);
+    odefunT = @(s_,y_,P_) BendV_Lag_EIGp_DE_impl(s_,y_,P_,usedPar);
     [BCmax, rep] = bc_diagnostics(sol, bcfunT);
     [DEmax,~,~]  = de_residual(sol, odefunT);
 
@@ -230,12 +230,12 @@ end
 
 function [BCmax, report] = bc_diagnostics(sol, bcfun)
 
-    lam = [];
+    P = [];
     if isfield(sol,'parameters') && ~isempty(sol.parameters)
-        lam = sol.parameters(:);
+        P = sol.parameters(:);
     end
     Ya = sol.y(:,1); Yb = sol.y(:,end);
-    res = bcfun(Ya, Yb, lam);
+    res = bcfun(Ya, Yb, P);
     [BCmax, iMax] = max(abs(res));
     report.idx = iMax;
     report.res = res;
@@ -319,8 +319,8 @@ function [accept, sol] = try_one_shot(solInit, H0, sim)
     for d = 1:numel(deltas)
       for o = 1:numel(opts)
           Par = Par0; Par.delta = deltas(d);
-          odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
-          bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
+          odefun = @(s,y,P) BendV_Lag_EIGp_DE_impl(s,y,P,Par);
+          bcfun  = @(ya,yb,P) BendV_Lag_EIGp_BC_impl(ya,yb,P,Par);
           try
               sol1 = bvp6c(odefun, bcfun, solInit, opts{o});
               [BCmax,~] = bc_diagnostics(sol1, bcfun);
@@ -351,9 +351,9 @@ function [rMax, rComp, worstIdx] = de_residual(sol, odefun)
     % DE_RESIDUAL  Max residual of ODE on a nonuniform mesh (central difference).
     % Uses second-order nonuniform central differences on interior nodes only.
 
-    lam = [];
+    P = [];
     if isfield(sol,'parameters') && ~isempty(sol.parameters)
-        lam = sol.parameters(:);
+        P = sol.parameters(:);
     end
     s   = sol.x;             % s in [0, pi]
     Y   = sol.y;
@@ -390,7 +390,7 @@ function [rMax, rComp, worstIdx] = de_residual(sol, odefun)
 
     F = zeros(size(YC));
     for j = 1:numel(sC)
-        F(:,j) = odefun(sC(j), YC(:,j), lam);
+        F(:,j) = odefun(sC(j), YC(:,j), P);
     end
 
     R = dY - F;
@@ -475,10 +475,10 @@ function rmin = local_min_radius_interior(sol)
     if isempty(rmin), rmin = Inf; end
 end
 
-function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
+function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, P, par)
     % BENDV_LAG_EIGP_BC_IMPL  Boundary conditions at poles and neck junction.
-    % South pole (α phase): regularity in Q,P,r,z plus integral constraints.
-    % North pole (β phase): regularity in Q,P plus integral constraints.
+    % South pole (α phase): regularity in Q,psi,r,z plus integral constraints.
+    % North pole (β phase): regularity in Q,psi plus integral constraints.
     % Neck junction: continuity of geometry and force balance between phases.
 
     % -------- Simulation Parameters --------
@@ -490,11 +490,11 @@ function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
 
     % α-phase (s)outh pole conditions
     south_pole = num2cell(y_poles(1:9));
-    [QAs, HAs, PAs, rAs, zAs, LAs, sAs, VAs, EAs] = deal(south_pole{:});
+    [QAs, HAs, psiAs, rAs, zAs, LAs, sAs, VAs, EAs] = deal(south_pole{:});
     res_south = [
         QAs
         % HAs
-        PAs
+        psiAs
         rAs
         zAs
         % LAs
@@ -505,11 +505,11 @@ function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
 
     % β-phase (n)orth pole conditions
     north_pole = num2cell(y_poles(10:18));
-    [QBn, HBn, PBn, rBn, zBn, LBn, sBn, VBn, EBn] = deal(north_pole{:});
+    [QBn, HBn, psiBn, rBn, zBn, LBn, sBn, VBn, EBn] = deal(north_pole{:});
     res_north = [
         QBn
         % HBn
-        PBn - pi
+        psiBn - pi
         rBn
         % zBn
         % LBn
@@ -520,28 +520,28 @@ function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
 
     % α-phase nec(k) conditions
     alpha_neck = num2cell(y_neck(1:9));
-    [QAk, HAk, PAk, rAk, zAk, LAk, sAk, VAk, EAk] = deal(alpha_neck{:});
+    [QAk, HAk, psiAk, rAk, zAk, LAk, sAk, VAk, EAk] = deal(alpha_neck{:});
 
     % β-phase nec(k) conditions
     beta_neck = num2cell(y_neck(10:18));
-    [QBk, HBk, PBk, rBk, zBk, LBk, sBk, VBk, EBk] = deal(beta_neck{:});
+    [QBk, HBk, psiBk, rBk, zBk, LBk, sBk, VBk, EBk] = deal(beta_neck{:});
 
     res_neck = [
-        PBk - PAk
+        psiBk - psiAk
         rBk - rAk
         zBk - zAk
         (VAk - VBk) - Vf
-        (QBk - QAk) - sin(PAk)/rAk
-        kB*(2*HBk - H0(2)) - kA*(2*HAk - H0(1)) + kG*(sin(PAk)/rAk)
-        kA*(2*HAk - H0(1))*(HAk - sin(PAk)/rAk + 0.5*H0(1)) ...
-            - kB*(2*HBk - H0(2))*(HBk - sin(PBk)/rBk + 0.5*H0(2)) ...
-            - (cos(PAk)/rAk) + LBk - LAk
+        (QBk - QAk) - sin(psiAk)/rAk
+        kB*(2*HBk - H0(2)) - kA*(2*HAk - H0(1)) + kG*(sin(psiAk)/rAk)
+        kA*(2*HAk - H0(1))*(HAk - sin(psiAk)/rAk + 0.5*H0(1)) ...
+            - kB*(2*HBk - H0(2))*(HBk - sin(psiBk)/rBk + 0.5*H0(2)) ...
+            - (cos(psiAk)/rAk) + LBk - LAk
         ];
 
     res = [res_south; res_north; res_neck];
 end
 
-function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
+function dyds = BendV_Lag_EIGp_DE_impl(S, y, P, par)
     % BENDV_LAG_EIGP_DE_IMPL  ODE system for two-phase vesicle equilibrium.
     % Evaluates d/ds of 18-component state vector (9 α-phase, 9 β-phase).
     % Uses a Taylor-expanded RHS near poles (S < delta*pi), otherwise bulk RHS.
@@ -558,41 +558,37 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
     SA = aS*S;
     SB = bS*S + pi;
 
-    % α-phase variables: [Q,H,P,r,z,L,s,V,E]
+    % α-phase variables: [Q,H,psi,r,z,L,s,V,E]
     alpha_vars = num2cell(y(1:9));
 
-    % β-phase variables: [Q,H,P,r,z,L,s,V,E]
+    % β-phase variables: [Q,H,psi,r,z,L,s,V,E]
     beta_vars = num2cell(y(10:18));
 
-    % RHS_pole handles singular pole expansion; RHS is bulk form.
-    % FIXED: Pole expansion requires sin(S)/r = 1 (from ds/dS consistency)
-    % Previous version incorrectly assumed sin(S)/r = 1/2, causing factor-of-2 errors
-    % Corrected: February 2026 - Issue 1 from code audit
-    RHS_pole = @(Q, H, P, r, z, L, s, V, B, S, k, H0, phase) [ ...
-        %2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
-        H*L + 0.5*lam - k*H0*H^2 + 0.5*k*H*H0^2;
+    RHS_pole = @(Q, H, psi, r, z, L, s, V, B, S, k, H0, phase) [ ...
+        %2*H*L + P - 2*k*H0*H^2 + k*H*H0^2;
+        H*L + 0.5*P - k*H0*H^2 + 0.5*k*H*H0^2;
         0;
         H;
         phase;
         0;
         0;
         1;
-        0.75*r*sin(P)*sin(S);
+        0.75*r*sin(psi)*sin(S);
         0.25*k*(2*H - H0)^2 * sin(S);
     ];
 
-    RHS = @(Q, H, P, r, z, L, s, V, B, S, k, H0) [ ...
-        (-Q*cos(P)/r ...
-            - k*(2*H - H0)*(H*H0 + 2*(H - sin(P)/r)^2) ...
-            + 2*H*L + lam ...
+    RHS = @(Q, H, psi, r, z, L, s, V, B, S, k, H0) [ ...
+        (-Q*cos(psi)/r ...
+            - k*(2*H - H0)*(H*H0 + 2*(H - sin(psi)/r)^2) ...
+            + 2*H*L + P ...
         )*sin(S)/r;
         0.5*Q/k*sin(S)/r;
-        (2*H - sin(P)/r)*sin(S)/r;
-        cos(P)*sin(S)/r;
-        sin(P)*sin(S)/r;
+        (2*H - sin(psi)/r)*sin(S)/r;
+        cos(psi)*sin(S)/r;
+        sin(psi)*sin(S)/r;
         0;
         sin(S)/r;
-        0.75*r*sin(P)*sin(S);
+        0.75*r*sin(psi)*sin(S);
         0.25*k*(2*H - H0)^2 * sin(S);
     ];
 

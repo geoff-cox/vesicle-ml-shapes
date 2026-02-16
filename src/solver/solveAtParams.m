@@ -574,7 +574,7 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, P, par)
         0;
         1;
         0.75*r*sin(psi)*sin(S);
-        0.25*k*(2*H - H0)^2 * sin(S);
+        2*pi*k*(2*H - H0)^2 * sin(S);
     ];
 
     RHS = @(Q, H, psi, r, z, L, s, V, B, S, k, H0) [ ...
@@ -589,7 +589,7 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, P, par)
         0;
         sin(S)/r;
         0.75*r*sin(psi)*sin(S);
-        0.25*k*(2*H - H0)^2 * sin(S);
+        2*pi*k*(2*H - H0)^2 * sin(S);
     ];
 
     if S < delta*pi

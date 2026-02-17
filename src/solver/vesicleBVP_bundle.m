@@ -160,27 +160,33 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, P, par)
 
     if isempty(deg); deg = 2; end
 
+    deltaS = delta * pi;  % interpret delta as an S-buffer fraction of pi
+
     % Mapped S-variables on each phase
     SA = aS*t;         % in [0, S*]
     SB = bS*t + pi;    % in [pi, S*] decreasing
-
+    
     % Pole distances in S-variable
     epsA = SA;         % south pole ε
     epsB = pi - SB;    % north pole ε (positive; since bS<0, epsB = -bS*t)
+    
+    % Decide whether we are in the pole buffer (t near 0)
+    inPoleA = (epsA < deltaS);
+    inPoleB = (epsB < deltaS);
 
     % Unpack states (A = α, B = β)
     YA = num2cell(y(1:9));    % [Q,H,psi,r,z,L,s,V,E]
     YB = num2cell(y(10:18));
 
-    % Decide whether we are in the pole buffer (t near 0)
-    inPole = (t < delta*pi);
-
-    if inPole
-        % Pole signs: +1 at south, -1 at north
+    % Pole signs: +1 at south, -1 at north
+    if inPoleA
         RegionA = rhs_pole(YA{:}, SA, kA, H0(1), P, +1, deg, epsA);
-        RegionB = rhs_pole(YB{:}, SB, kB, H0(2), P, -1, deg, epsB);
     else
         RegionA = rhs_bulk(YA{:}, SA, kA, H0(1), P);
+    end
+    if inPoleB
+        RegionB = rhs_pole(YB{:}, SB, kB, H0(2), P, -1, deg, epsB);
+    else
         RegionB = rhs_bulk(YB{:}, SB, kB, H0(2), P);
     end
 
@@ -227,7 +233,7 @@ function pole = pole_asymptotics(eps, Hp, k, H0, L, P, poleSign, deg)
     % --- Q*cos(psi)/r ---
     % Use a pole-safe evaluation: Q ~ Qp*eps, cos(psi)/r ~ poleSign*(1/eps + c1*eps + c3*eps^3 + ...)
     % => Q*cos/r ~ poleSign*(Qp + Qp*c1*eps^2 + Qp*c3*eps^4 + ...)
-    Qcos_over_r = poleSign*Qp;  % degree 1
+    Qcos_over_r = Qp;  % degree 1
 
     if deg >= 2
         c1 = (1 - 9*Hp^2)/24;      % coefficient of eps in cos/r
@@ -273,13 +279,10 @@ function dy = rhs_pole( ...
     sinS_over_r   = pole.sinS_over_r;
 
     % Replace the singular product Q*cos(psi)/r by its finite asymptotic value
-    Qcos_over_r   = pole.Qcos_over_r;
+    Qp   = pole.Qp;
 
     dy = [ ...
-        ( - Qcos_over_r ...
-          - k*(2*H - H0)*(H*H0 + 2*(H - sinpsi_over_r)^2) ...
-          + 2*H*L + P ...
-        )*sinS_over_r;                         % dQ/dS
+        Qp;                                    % dQ/dS
         0.5*Q/k * sinS_over_r;                 % dH/dS (Q itself is O(eps), safe)
         (2*H - sinpsi_over_r) * sinS_over_r;   % dpsi/dS
         cos(psi) * sinS_over_r;                % dr/dS  (finite: sinS_over_r ~ 1)

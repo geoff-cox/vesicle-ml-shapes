@@ -55,12 +55,14 @@ function sim = sim_config_sanity()
     [sim.MP.aS, sim.MP.bS] = computePhaseScales(sim.MP.A);
 
     sim.TH = struct();
-    sim.TH.delta     = 0.015;
+    sim.TH.delta     = 0.02;
     sim.TH.BCmax     = 5e-5;
     sim.TH.DEmaxHard = 5e-1;
     sim.TH.rMin      = 1e-4;
     sim.TH.minH0Step = 0.02;
-    sim.TH.opts = bvpset('RelTol',1e-5,'AbsTol',1e-7,'NMax',900);
+    sim.TH.poleDeg   = 1;
+    sim.TH.useLegacy = true;
+    sim.TH.opts = bvpset('RelTol',1e-6,'AbsTol',1e-8,'NMax',1500);
 
     sim.SP = struct();
     sim.SP.ModelVersion   = "sanity";

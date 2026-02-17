@@ -3,11 +3,11 @@ clc; clear;
 TH = struct();
 TH.delta = 1e-4;              % use your usual delta (can sweep this too)
 TH.opts  = bvpset('RelTol',1e-6,'AbsTol',1e-8,'NMax',1500);
-% TH.opts  = bvpset('RelTol',1e-6,'NMax',1500);
+TH.targetH0   = [0, 0];
+TH.useLegacy = false;
+TH.poleDeg = 1;
 
-targetH0   = [0, 0];
-
-init_sol = load("C:\Users\mediaPC\Documents\MATLAB\research-sims\vesicle-ml-shapes\src\initial-shapes\SIM_Node_50_72_0_1_1_+00_+00.mat");
+init_sol = load("src\initial-shapes\SIM_Node_50_72_0_1_1_+00_+00.mat");
 sol = init_sol.Version(1).Solution;
 guess = bvpinit(sol.x, sol.y, sol.parameters);
 
@@ -21,32 +21,51 @@ P.KG = 0;
 P.aS = 0.5000;
 P.bS = -0.5000;
 
-Par = struct('A',P.A,'V',P.V,'KA',P.KA,'KB',P.KB,'KG',P.KG, ...
-             'aS',P.aS,'bS',P.bS,'delta',TH.delta,'H0',targetH0);
+Par = struct( ...
+    'A',P.A,'V',P.V,'KA',P.KA,'KB',P.KB,'KG',P.KG, ...
+    'aS',P.aS,'bS',P.bS,'delta',TH.delta,'H0',TH.targetH0, ...
+    'poleDeg',TH.poleDeg,'useLegacy',TH.useLegacy);
 
-odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
-bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
+if Par.useLegacy
+    % LEGACY APPROACH
+    odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
+    bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
+else
+    % NEW APPROACH
+    bvp = vesicleBVP_bundle(Par);
+    odefun = bvp.odefun;
+    bcfun  = bvp.bcfun;
+end
 
 sol = bvp6c(odefun, bcfun, guess, TH.opts)
 
-    rA = sol.y(4,:);  zA = sol.y(5,:);
-    rB = sol.y(13,:); zB = sol.y(14,:);
+rA = sol.y(4,:);  zA = sol.y(5,:);
+rB = sol.y(13,:); zB = sol.y(14,:);
 
-    plot(rA, zA, 'LineWidth', 3); hold on;
-    plot(rB, zB, 'LineWidth', 3); hold off;
+plot(rA, zA, 'LineWidth', 3); hold on;
+plot(rB, zB, 'LineWidth', 3); hold off;
 
 lam = 3200;
-odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
-bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
+if Par.useLegacy
+    % LEGACY APPROACH
+    odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
+    bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
+else
+    % NEW APPROACH
+    bvp = vesicleBVP_bundle(Par);
+    odefun = bvp.odefun;
+    bcfun  = bvp.bcfun;
+end
 sol = bvp6c(odefun, bcfun, guess, TH.opts)
 
-    rA = sol.y(4,:);  zA = sol.y(5,:); hold on;
-    rB = sol.y(13,:); zB = sol.y(14,:);
+rA = sol.y(4,:);  zA = sol.y(5,:); hold on;
+rB = sol.y(13,:); zB = sol.y(14,:);
 
-    plot(rA, zA, 'LineWidth', 3);
-    plot(rB, zB, 'LineWidth', 3);
-    axis image
+plot(rA, zA, 'LineWidth', 3);
+plot(rB, zB, 'LineWidth', 3);
+axis image
 fdg=0;
+
 function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
     % BENDV_LAG_EIGP_BC_IMPL  Boundary conditions at poles and neck junction.
     % South pole (α phase): regularity in Q,P,r,z plus integral constraints.
@@ -143,8 +162,9 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
     % Previous version incorrectly assumed sin(S)/r = 1/2, causing factor-of-2 errors
     % Corrected: February 2026 - Issue 1 from code audit
     RHS_pole = @(Q, H, P, r, z, L, s, V, B, S, k, H0, phase) [ ...
-        2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
-        % H*L + 0.5*lam - k*H0*H^2 + 0.5*k*H*H0^2;
+        % 2*H*L + lam - 2*k*H0*H^2 + k*H*H0^2;
+        H*L  + 0.5*lam - k*H0*H^2  + 0.5*k*H*H0^2;
+        Hp*L + 0.5*P   - k*H0*Hp^2 + 0.5*k*Hp*H0^2
         0;
         H;
         phase;
@@ -152,7 +172,7 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
         0;
         1;
         0.75*r*sin(P)*sin(S);
-        0.25*k*(2*H - H0)^2 * sin(S);
+        0.5*k*(2*H - H0)^2 * sin(S);
     ];
 
     RHS = @(Q, H, P, r, z, L, s, V, B, S, k, H0) [ ...
@@ -164,7 +184,7 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, lam, par)
         0;
         sin(S)/r;
         0.75*r*sin(P)*sin(S);
-        0.25*k*(2*H - H0)^2 * sin(S);
+        0.5*k*(2*H - H0)^2 * sin(S);
     ];
 
     if S < delta*pi

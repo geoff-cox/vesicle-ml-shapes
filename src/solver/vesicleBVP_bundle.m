@@ -180,12 +180,12 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, P, par)
 
     % Pole signs: +1 at south, -1 at north
     if inPoleA
-        RegionA = rhs_pole(YA{:}, SA, kA, H0(1), P, +1, deg, epsA);
+        RegionA = rhs_pole(YA{:}, SA, kA, H0(1), P, deg, epsA);
     else
         RegionA = rhs_bulk(YA{:}, SA, kA, H0(1), P);
     end
     if inPoleB
-        RegionB = rhs_pole(YB{:}, SB, kB, H0(2), P, -1, deg, epsB);
+        RegionB = rhs_pole(YB{:}, SB, kB, H0(2), P, deg, epsB);
     else
         RegionB = rhs_bulk(YB{:}, SB, kB, H0(2), P);
     end
@@ -195,14 +195,13 @@ function dyds = BendV_Lag_EIGp_DE_impl(S, y, P, par)
 
 end
 
-function pole = pole_asymptotics(eps, Hp, k, H0, L, P, poleSign, deg)
+function pole = pole_asymptotics(eps, Hp, k, H0, L, P, deg)
     % POLE_ASYMPTOTICS
     % Pole-safe approximations for singular ratios and products.
     % eps      : distance to pole in S (south: eps=S; north: eps=pi-S)
     % Hp       : H at the pole (use current H in pole region; 
     %            equals H_p asymptotically)
     % k,H0,L,P : phase parameters/states (nondimensional)
-    % poleSign : +1 south, -1 north (affects cos(psi)/r expansion sign)
     % deg      : 1,2 (Taylor degree in eps)
     %
     % Returns:
@@ -212,10 +211,10 @@ function pole = pole_asymptotics(eps, Hp, k, H0, L, P, poleSign, deg)
     %   Hpp            = H_p'' at the pole
     %   Qp             = Q'(0) at the pole (in S-variable)
 
-    % Regularity-based Q'(0) at the pole (finite)
+    % Regularity-based value of dQ/dS at the pole
     Qp = Hp*L + 0.5*P - k*H0*Hp^2 + 0.5*k*Hp*H0^2;
 
-    % Corresponding H'' at the pole
+    % Corresponding H'' at the pole (since dH/dS ~ Q/(2k) and Q ~ Qp*eps)
     Hpp = Qp/(2*k);
 
     % --- sin(psi)/r ---
@@ -231,13 +230,13 @@ function pole = pole_asymptotics(eps, Hp, k, H0, L, P, poleSign, deg)
     end
 
     % --- Q*cos(psi)/r ---
-    % Use a pole-safe evaluation: Q ~ Qp*eps, cos(psi)/r ~ poleSign*(1/eps + c1*eps + c3*eps^3 + ...)
-    % => Q*cos/r ~ poleSign*(Qp + Qp*c1*eps^2 + Qp*c3*eps^4 + ...)
+    % Has a finite pole limit: Q*cos(psi)/r -> dQ/dS|pole = Qp.
+    % Q ~ Qp*eps, cos(psi)/r ~ 1/eps + c1*eps + c3*eps^3 + ...
+    % => Q*cos/r ~ Qp + Qp*c1*eps^2 + Qp*c3*eps^4 + ...
     Qcos_over_r = Qp;  % degree 1
-
     if deg >= 2
-        c1 = (1 - 9*Hp^2)/24;      % coefficient of eps in cos/r
-        Qcos_over_r = Qcos_over_r + poleSign*(Qp*c1*eps^2);  % contributes at eps^2
+        c1 = (1 - 9*Hp^2)/24;      % coeff of eps in cos(psi)/r expansion
+        Qcos_over_r = Qcos_over_r + Qp*c1*eps^2;  % contributes at eps^2
     end
 
     pole.sinpsi_over_r = sinpsi_over_r;
@@ -268,12 +267,11 @@ function dy = rhs_bulk(Q, H, psi, r, z, L, s, V, E, S, k, H0, P)
     ];
 end
 
-function dy = rhs_pole( ...
-    Q, H, psi, r, z, L, s, V, E, S, k, H0, P, poleSign, deg, eps)
+function dy = rhs_pole(Q, H, psi, r, z, L, s, V, E, S, k, H0, P, deg, eps)
     % Pole RHS derived from Taylor truncations in eps 
     % (eps = S near south, eps = pi-S near north)
 
-    pole = pole_asymptotics(eps, H, k, H0, L, P, poleSign, deg);
+    pole = pole_asymptotics(eps, H, k, H0, L, P, deg);
 
     sinpsi_over_r = pole.sinpsi_over_r;
     sinS_over_r   = pole.sinS_over_r;

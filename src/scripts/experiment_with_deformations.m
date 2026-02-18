@@ -35,7 +35,7 @@ H0tol      = 1e-10;           % exact-match tolerance (fallback is nearest)
 
 %% --- solver knobs for the re-solves ---
 TH = struct();
-TH.delta = 0.01;              % use your usual delta (can sweep this too)
+TH.delta = 1e-4;              % use your usual delta (can sweep this too)
 TH.opts  = bvpset('RelTol',1e-6,'AbsTol',1e-8,'NMax',1500);
 
 % Optional "sanity" gates (loose; this is a testing script)
@@ -57,16 +57,17 @@ if ~isfield(P,'aS') || ~isfield(P,'bS')
     [P.aS, P.bS] = computePhaseScales(P.A);
 end
 Par = struct('A',P.A,'V',P.V,'KA',P.KA,'KB',P.KB,'KG',P.KG, ...
-             'aS',P.aS,'bS',P.bS,'delta',TH.delta,'H0',targetH0);
+             'aS',P.aS,'bS',P.bS,'delta',TH.delta,'H0',targetH0,'poleDeg',2);
 
 % Decide whether we can call the model ODE/BC directly (preferred)
-haveModelFns = (exist('BendV_Lag_EIGp_DE_impl','file')==2) && (exist('BendV_Lag_EIGp_BC_impl','file')==2);
-if haveModelFns
-    odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
-    bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
-else
-    warning(['Could not find BendV_Lag_EIGp_DE_impl / _BC_impl as standalone functions.\n' ...
-             'Falling back to solveAtParams as the re-solver (still uses your deformed guess).']);
+haveModelFns = false;
+try
+    bvp = vesicleBVP_bundle(Par);
+    odefun = bvp.odefun;
+    bcfun  = bvp.bcfun;
+    haveModelFns = true;
+catch msg
+    warning(msg);
 end
 
 %% --- deformation strategies (add/remove freely) ---
@@ -183,8 +184,8 @@ function guess = deform_P_mode(sol, eps, k, modeType)
     end
 
     y = sol.y;
-    y(3,:)  = y(3,:)  + eps*bump;            % alpha P
-    y(12,:) = y(12,:) + eps*bump;            % beta  P
+    y(4,:)  = y(4,:)  + eps*bump;            % alpha P
+    y(13,:) = y(13,:) + eps*bump;            % beta  P
 
     guess = bvpinit(sol.x, y, safe_params(sol.parameters));
 end
@@ -200,8 +201,8 @@ function guess = deform_P_random(sol, eps, modes, seed)
         bump = bump + a(j)*sin(modes(j)*s);
     end
     y = sol.y;
-    y(3,:)  = y(3,:)  + eps*bump;
-    y(12,:) = y(12,:) + eps*bump;
+    y(4,:)  = y(4,:)  + eps*bump;
+    y(13,:) = y(13,:) + eps*bump;
 
     guess = bvpinit(sol.x, y, safe_params(sol.parameters));
 end
@@ -220,7 +221,7 @@ function plot_shape(sol, ls, lw, lbl)
     rA = sol.y(4,:);  zA = sol.y(5,:);
     rB = sol.y(13,:); zB = sol.y(14,:);
 
-    plot(rA, zA, ls, 'LineWidth', lw);
+    plot(rA, zA, ls, 'LineWidth', lw); hold on;
     plot(rB, zB, ls, 'LineWidth', lw);
 
     % annotate lightly (legend is too noisy across many overlays)

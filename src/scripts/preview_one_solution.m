@@ -11,11 +11,15 @@ projRoot = fileparts(srcRoot);
 resDir   = fullfile(projRoot, 'sim-results', 'hashed_results');
 d = dir(fullfile(resDir, '*.mat'));
 assert(~isempty(d), 'No hashed results found yet.');
-
-picks = 1:2:length(d);
+targetH0 = [0.0,1.0];
+picks = 1:length(d);
 for pick = picks
     data = fullfile(d(pick).folder, d(pick).name);
     S = load(data, 'result', 'meta');
+    
+    if norm(S.meta.homotopy(1).H0 - targetH0) > 1e-3
+        continue
+    end
 
     sol = S.result.sol;
     r_A = sol.y(4,:);  z_A = sol.y(5,:);

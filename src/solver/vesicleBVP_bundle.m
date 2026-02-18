@@ -88,7 +88,6 @@ function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, P, par)
         rA0          % r=0 at axis
         zA0          % anchor vertical translation
         sA0          % anchor arclength accumulator
-        VA0          % anchor volume accumulator
         EA0          % anchor energy accumulator
     ];
 
@@ -110,6 +109,7 @@ function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, P, par)
         rB0          % r=0 at axis
         sB0          % anchor arclength accumulator
         VB0          % anchor volume accumulator (important)
+        EB0          % anchor energy accumulator
     ];
 
     % =====================================================================
@@ -273,17 +273,22 @@ function dy = rhs_pole(Q, H, psi, r, z, L, s, V, E, S, k, H0, P, deg, eps)
 
     pole = pole_asymptotics(eps, H, k, H0, L, P, deg);
 
+    Qcos_over_r = pole.Qcos_over_r;
     sinpsi_over_r = pole.sinpsi_over_r;
     sinS_over_r   = pole.sinS_over_r;
 
     % Replace the singular product Q*cos(psi)/r by its finite asymptotic value
-    Qp   = pole.Qp;
+    dQdS = ( ...
+        - Qcos_over_r ...
+        - k*(2*H - H0)*(H*H0 + 2*(H - sinpsi_over_r)^2) ...
+        + 2*H*L + P ...
+    ) * sinS_over_r;
 
     dy = [ ...
-        Qp;                                    % dQ/dS
-        0.5*Q/k * sinS_over_r;                 % dH/dS (Q itself is O(eps), safe)
+        dQdS;                                  % dQ/dS
+        0.5*Q/k * sinS_over_r;                 % dH/dS (Q is O(eps), safe)
         (2*H - sinpsi_over_r) * sinS_over_r;   % dpsi/dS
-        cos(psi) * sinS_over_r;                % dr/dS  (finite: sinS_over_r ~ 1)
+        cos(psi) * sinS_over_r;                % dr/dS (sinS_over_r ~ 1)
         sin(psi) * sinS_over_r;                % dz/dS
         0;                                     % dL/dS
         sinS_over_r;                           % ds/dS

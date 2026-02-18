@@ -55,7 +55,7 @@ function sim = sim_config_sanity()
     [sim.MP.aS, sim.MP.bS] = computePhaseScales(sim.MP.A);
 
     sim.TH = struct();
-    sim.TH.delta     = 0.02;
+    sim.TH.delta     = 1e-4;
     sim.TH.BCmax     = 5e-5;
     sim.TH.DEmaxHard = 5e-1;
     sim.TH.rMin      = 1e-4;

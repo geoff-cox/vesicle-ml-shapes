@@ -76,7 +76,8 @@ function [result, meta] = solveAtParams(params, sim, warm)
         H0_from = [0,0];
     end
     
-    stepCaps = [Inf, 0.50, 0.25, 0.12, 0.06, 0.03];
+    % stepCaps = [Inf, 0.50, 0.25, 0.12, 0.06, 0.03];
+    stepCaps = [Inf, 0.50, 0.1, 0.05];
     
     if isfield(TH,'delta_list') && ~isempty(TH.delta_list)
         deltas = TH.delta_list(:)';
@@ -84,8 +85,8 @@ function [result, meta] = solveAtParams(params, sim, warm)
         deltas = [delta0, min(2*delta0, 0.02), max(0.5*delta0, 5e-3)];
     end
     
-    optSets  = {opts0, bvpset(opts0,'RelTol',1e-5,'AbsTol',1e-7)};  % exploration fallback
-    
+    % optSets  = {opts0, bvpset(opts0,'RelTol',1e-5,'AbsTol',1e-7)};  % exploration fallback
+    optSets  = {opts0};
     homolog = struct('H0',{},'delta',{},'mesh',{},'BCmax',{},'DEmax',{},'rMin',{}); % safe init
     
     accepted = false;

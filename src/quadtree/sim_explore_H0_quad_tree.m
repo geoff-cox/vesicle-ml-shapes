@@ -28,7 +28,7 @@ function sim_explore_H0_quad_tree(sim)
     % --- failure registry normalization ---
     cache = normalize_failure_registry(cache);
 
-    MAX_RETRIES   = getfield_default(sim.SP, 'MaxRetries', 3);
+    MAX_RETRIES   = getfield_default(sim.SP, 'MaxRetries', 1);
     BACKOFF_STEPS = getfield_default(sim.SP, 'BackoffSteps', [0 1 2 4 8 16]);
     MIN_BACKOFF   = getfield_default(sim.SP, 'MinBackoff', 1);
 

@@ -38,13 +38,15 @@ function S = sim_config()
     TH.rMin      = 1e-3;
 
     % ---- solver knobs (not part of physics hash) ----
-    TH.delta = 0.01;
+    TH.delta = 1e-3;
     TH.opts  = bvpset( ...
         'RelTol',1e-6, ...
         'AbsTol',1e-8, ...
         'NMax',1500);
-    TH.delta_list = [0.02, 0.015, 0.01, 0.008, 0.005];
+    TH.delta_list = 1e-3;
     TH.minH0Step = 0.01;
+    TH.useLegacy = false;
+    TH.poleDeg = 2;
 
     % ---- physical parameters (global for this run) ----
     MP.A  = 0.50;
@@ -57,7 +59,7 @@ function S = sim_config()
     [MP.aS, MP.bS] = computePhaseScales(MP.A);
 
     % ---- apply default overrides ----
-    SP.H0Bounds = [-3 3; -3 3];     % [H0_1min H0_1max; H0_2min H0_2max]
+    SP.H0Bounds = [0 10; 0 10];     % [H0_1min H0_1max; H0_2min H0_2max]
     % SP.maxDepth = 7;
     % SP.maxCells = 4000;
     % SP.eTol     = 5e-3;

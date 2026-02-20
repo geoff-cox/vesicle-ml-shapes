@@ -1,70 +1,132 @@
 clc; clear;
 %% --- solver knobs for the re-solves ---
-TH = struct();
-TH.delta = 1e-4;              % use your usual delta (can sweep this too)
-TH.opts  = bvpset('RelTol',1e-6,'AbsTol',1e-8,'NMax',1500);
-TH.targetH0   = [0, 0];
-TH.useLegacy = false;
-TH.poleDeg = 2;
+delta = 1e-4;              % use your usual delta (can sweep this too)
+opts  = bvpset('RelTol',1e-6,'AbsTol',1e-8,'NMax',1500);
+useLegacy = false;
+poleDeg = 2;
+minStep = 0.0001;
+defaultStep = 0.1;
 
-init_sol = load("src\initial-shapes\SIM_Node_50_72_0_1_1_+00_+00.mat");
-sol = init_sol.Version(1).Solution;
-guess = bvpinit(sol.x, sol.y, sol.parameters);
+init_sols = load("src\initial-shapes\SIM_Node_50_72_0_1_1_+00_+00.mat");
+init_sol = init_sols.Version(1).Solution;
+sol = bvpinit(init_sol.x, init_sol.y, init_sol.parameters);
 
-P.H0_1 = 0;
-P.H0_2 = 0;
-P.A = 0.5000;
-P.V = 0.7200;
-P.KA = 1;
-P.KB = 1;
-P.KG = 0;
-P.aS = 0.5000;
-P.bS = -0.5000;
+A = 0.5000;
+V = 0.7200;
+KA = 1;
+KB = 1;
+KG = 0;
+aS = 0.5000;
+bS = -0.5000;
+
+startH0 = [0 0];
+targetH0 = [0 -10];
+
+direction = targetH0 - startH0;
+dH0 = direction/norm(direction);
 
 Par = struct( ...
-    'A',P.A,'V',P.V,'KA',P.KA,'KB',P.KB,'KG',P.KG, ...
-    'aS',P.aS,'bS',P.bS,'delta',TH.delta,'H0',TH.targetH0, ...
-    'poleDeg',TH.poleDeg,'useLegacy',TH.useLegacy);
+    'A',A,'V',V,'KA',KA,'KB',KB,'KG',KG, ...
+    'aS',aS,'bS',bS,'delta',delta,'H0',startH0, ...
+    'poleDeg',poleDeg);
 
-if Par.useLegacy
-    % LEGACY APPROACH
-    odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
-    bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
-else
-    % NEW APPROACH
+step = defaultStep;
+checkpoint = [0,-1];
+chkptSol = sol;
+chkptH0 = Par.H0;
+lastZ = sol.y(14,1);
+while step > minStep
     bvp = vesicleBVP_bundle(Par);
-    odefun = bvp.odefun;
-    bcfun  = bvp.bcfun;
+    try
+        sol = bvp6c(bvp.odefun, bvp.bcfun, sol, opts);
+    catch
+        sol = chkptSol;
+        Par.H0 = chkptH0;
+        step = step*0.2;
+        checkpoint = chkptH0;
+    end
+
+    thisZ = sol.y(14,1);
+    zJump = abs(thisZ - lastZ);
+    fprintf("z-jump = %g -- ",zJump)
+    lastZ = thisZ;
+
+    if zJump > 0.2
+        sol = chkptSol;
+        Par.H0 = chkptH0;
+        step = step*0.5;
+        checkpoint = chkptH0;
+    elseif zJump < 0.02
+        step = step*2;
+    end
+
+    if norm(Par.H0 - startH0) > norm(checkpoint - startH0)
+        chkptSol = sol;
+        checkpoint = checkpoint + 1;
+        chkptH0 = Par.H0;
+    end
+
+    rA = sol.y(4,:);  zA = sol.y(5,:);
+    rB = sol.y(13,:); zB = sol.y(14,:);
+
+    plot(rA, zA, 'LineWidth', 3); hold on;
+    plot(rB, zB, 'LineWidth', 3); hold off;
+    % axis image
+    drawnow
+    % if sol.fevals > 150000
+    %     step = step*0.5;
+    % elseif sol.fevals < 100000
+    %     step = min(step*2,defaultStep);
+    % end
+    Par.H0 = Par.H0 + step*dH0;
+    fprintf("H0 = [%g, %g]\n",Par.H0)
+    if norm(Par.H0 - startH0) > norm(direction)
+        break
+    end
 end
 
-sol = bvp6c(odefun, bcfun, guess, TH.opts)
+startH0 = [0 -4];
+targetH0 = [4 -4];
 
-rA = sol.y(4,:);  zA = sol.y(5,:);
-rB = sol.y(13,:); zB = sol.y(14,:);
+direction = targetH0 - startH0;
+dH0 = direction/norm(direction);
 
-plot(rA, zA, 'LineWidth', 3); hold on;
-plot(rB, zB, 'LineWidth', 3); hold off;
+Par = struct( ...
+    'A',A,'V',V,'KA',KA,'KB',KB,'KG',KG, ...
+    'aS',aS,'bS',bS,'delta',delta,'H0',startH0, ...
+    'poleDeg',poleDeg);
 
-Par.H0 = [0, 0.5];
-if Par.useLegacy
-    % LEGACY APPROACH
-    odefun = @(s,y,lam) BendV_Lag_EIGp_DE_impl(s,y,lam,Par);
-    bcfun  = @(ya,yb,lam) BendV_Lag_EIGp_BC_impl(ya,yb,lam,Par);
-else
-    % NEW APPROACH
+step = defaultStep;
+while step > minStep
     bvp = vesicleBVP_bundle(Par);
-    odefun = bvp.odefun;
-    bcfun  = bvp.bcfun;
+    try
+        sol = bvp6c(bvp.odefun, bvp.bcfun, sol, opts);
+        step = defaultStep;
+    catch
+        step = step*0.1;
+    end
+    rA = sol.y(4,:);  zA = sol.y(5,:);
+    rB = sol.y(13,:); zB = sol.y(14,:);
+    pause(0.2)
+
+    plot(rA, zA, 'LineWidth', 3); hold on;
+    plot(rB, zB, 'LineWidth', 3); hold off;
+    axis image
+    drawnow
+    Par.H0 = Par.H0 + defaultStep*dH0;
+    fprintf("H0 = [%g, %g]\n",Par.H0)
+    if norm(Par.H0 - startH0) > norm(direction)
+        break
+    end
 end
-sol = bvp6c(odefun, bcfun, guess, TH.opts)
-
-rA = sol.y(4,:);  zA = sol.y(5,:); hold on;
-rB = sol.y(13,:); zB = sol.y(14,:);
-
-plot(rA, zA, 'LineWidth', 3);
-plot(rB, zB, 'LineWidth', 3);
-axis image
-fdg=0;
+% sol = bvp6c(odefun, bcfun, guess, opts)
+% 
+% rA = sol.y(4,:);  zA = sol.y(5,:); hold on;
+% rB = sol.y(13,:); zB = sol.y(14,:);
+% 
+% plot(rA, zA, 'LineWidth', 3);
+% plot(rB, zB, 'LineWidth', 3);
+% axis image
 
 function res = BendV_Lag_EIGp_BC_impl(y_poles, y_neck, lam, par)
     % BENDV_LAG_EIGP_BC_IMPL  Boundary conditions at poles and neck junction.

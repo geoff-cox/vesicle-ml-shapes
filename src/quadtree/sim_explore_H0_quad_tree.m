@@ -321,6 +321,21 @@ function saveCache(simDir, cache)
     movefile(tmp, f, 'f');
 end
 
+function logmsg(logPath, msg)
+    ts = datestr(now, 'yyyy-mm-dd HH:MM:SS.FFF');
+    txt = sprintf('%s %s\n', ts, msg);
+    fprintf('%s', txt);
+    try
+        fid = fopen(logPath,'a');
+        if fid>0
+            fwrite(fid, txt);
+            fclose(fid);
+        end
+    catch
+        % best-effort
+    end
+end
+
 function warm = pickWarmStart(params, sim, simDir, T)
 
     warm = struct();
